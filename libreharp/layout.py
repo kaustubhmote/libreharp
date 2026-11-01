@@ -144,18 +144,7 @@ def fit_dialog(owner):
     dialog.setPosSize(
         area.X + (area.Width - width) // 2, area.Y + (area.Height - height) // 2, width, height, 15
     )
-    owner.viewport_bars, owner.viewport_insets = {}, {"x": 0, "y": 0}
-    context = dialog.getAccessibleContext()
-    for index in range(context.getAccessibleChildCount()):
-        child = context.getAccessibleChild(index).getAccessibleContext()
-        if child.getAccessibleRole() == uno.getConstantByName(
-            "com.sun.star.accessibility.AccessibleRole.SCROLL_BAR"
-        ):
-            bounds = child.getBounds()
-            axis = "x" if bounds.Width > bounds.Height else "y"
-            owner.viewport_bars[axis] = child
-            owner.viewport_insets["y" if axis == "x" else "x"] = min(bounds.Width, bounds.Height)
-    owner.viewport_listeners = []
+    connect_viewport(owner)
     for name in owner.control_names:
         control = dialog.getControl(name)
         model = control.getModel()
@@ -170,6 +159,28 @@ def fit_dialog(owner):
             and bounds.Width > available > 0
         ):
             model.Width = max(1, math.floor(model.Width * available / bounds.Width))
+
+
+def connect_viewport(owner):
+    dialog = owner.dialog
+    owner.viewport_bars, owner.viewport_insets = {}, {"x": 0, "y": 0}
+    context = dialog.getAccessibleContext()
+    for index in range(context.getAccessibleChildCount()):
+        child = context.getAccessibleChild(index).getAccessibleContext()
+        if child.getAccessibleRole() == uno.getConstantByName(
+            "com.sun.star.accessibility.AccessibleRole.SCROLL_BAR"
+        ):
+            bounds = child.getBounds()
+            horizontal = uno.getConstantByName("com.sun.star.accessibility.AccessibleStateType.HORIZONTAL")
+            states = child.getAccessibleStateSet()
+            is_horizontal = (
+                bool(states & horizontal) if isinstance(states, int) else states.contains(horizontal)
+            )
+            axis = "x" if is_horizontal else "y"
+            owner.viewport_bars[axis] = child
+            owner.viewport_insets["y" if axis == "x" else "x"] = min(bounds.Width, bounds.Height)
+    owner.viewport_listeners = []
+    for name in owner.control_names:
         listener = Reveal(owner, name)
         dialog.getControl(name).addFocusListener(listener)
         owner.viewport_listeners.append(listener)
@@ -183,3 +194,4 @@ def fit_dialog(owner):
                     watch(context.getAccessibleChild(index).getAccessibleContext(), depth + 1)
 
         watch(dialog.getControl(name).getAccessibleContext())
+    owner.viewport_ready = True

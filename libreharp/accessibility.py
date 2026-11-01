@@ -117,8 +117,11 @@ class Keys(unohelper.Base, XKeyHandler):
         )
         # During native dispatch, ActiveTopWindow can temporarily differ from the
         # window that actually received the key. The event source is authoritative.
-        if event.Source != top and self.owner.key_toolkit.getActiveTopWindow() != top:
+        if not self.sidebar and event.Source != top and self.owner.key_toolkit.getActiveTopWindow() != top:
             return False
+        # GTK embeds the installed panel in an intermediary native window.
+        # Its source/active top is neither the Writer frame nor our peer;
+        # current focus on one of this panel's controls establishes ownership.
         if self.sidebar and not any(
             focused(self.owner.dialog.getControl(n)) for n in self.owner.control_names
         ):

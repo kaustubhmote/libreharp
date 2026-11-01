@@ -36,6 +36,8 @@ def walk(node, depth=0):
         "focused": node.getState().contains(pyatspi.STATE_FOCUSED),
         "description": node.description,
     }
+    if node.name == "Status" or depth == 0:
+        item["bounds"] = list(node.queryComponent().getExtents(pyatspi.DESKTOP_COORDS))
     if node.name == "Status":
         item["text"] = node.queryText().getText(0, -1)
     result.append(item)

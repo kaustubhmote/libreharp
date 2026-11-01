@@ -8,7 +8,9 @@ import traceback
 
 import test_libreoffice as test
 import uno
+from test_accessibility import wait_for
 
+from libreharp.layout import focus_control
 from libreharp.uno_app import Runtime, Settings
 
 
@@ -19,8 +21,9 @@ def main():
     window = Settings(app)
     try:
         window.show()
+        assert wait_for(lambda: getattr(window, "viewport_ready", False))
         window.status("Accessible bridge test completed.")
-        window.dialog.getControl("status").setFocus()
+        focus_control(window, "status")
         client_env = {
             k: v for k, v in os.environ.items() if k not in {"PYTHONHOME", "PYTHONPATH", "LD_LIBRARY_PATH"}
         }
@@ -55,6 +58,7 @@ def main():
         test.record("AT-SPI exposes status focus", any(n["name"] == "Status" and n["focused"] for n in nodes))
         window.close()
         doc.Text.String = "This is a example."
+        doc.CurrentController.ViewSettings.ZoomValue = 100
         doc.CharLocale = uno.createUnoStruct("com.sun.star.lang.Locale", "en", "US", "")
         doc.storeAsURL(
             (test.ZONE / "LibreHarp-AT-SPI.odt").as_uri(),
@@ -107,6 +111,34 @@ def main():
             "Installed Open sidebar focuses Findings",
             any(n["name"] == "Findings" and n["focus_within"] for n in nodes),
         )
+        subprocess.run(["xdotool", "key", "--clearmodifiers", "F8"], check=True)
+        time.sleep(0.5)
+        nodes = json.loads(
+            subprocess.check_output(
+                [
+                    "uv",
+                    "run",
+                    "--no-project",
+                    "--offline",
+                    "/usr/bin/python3",
+                    str(test.ROOT / "scripts/atspi_probe.py"),
+                    title,
+                ],
+                text=True,
+                timeout=30,
+                env=client_env,
+            )
+        )
+        status = next(n for n in nodes if n["name"] == "Status")
+        x, y, w, h = status["bounds"]
+        fx, fy, fw, fh = nodes[0]["bounds"]
+        test.REPORT["focused_sidebar_status"] = status
+        test.REPORT["writer_bounds"] = nodes[0]["bounds"]
+        subprocess.run(["import", "-window", xid, str(test.ZONE / "atspi-sidebar-status.png")], check=True)
+        test.record(
+            "Installed sidebar F8 reveals and focuses Status",
+            status["focused"] and fx <= x and fy <= y and x + w <= fx + fw and y + h <= fy + fh,
+        )
     finally:
         window.close()
         doc.close(True)
@@ -124,5 +156,7 @@ if __name__ == "__main__":
     finally:
         test.stop()
         test.REPORT["passed"] = code == 0
-        (test.ZONE / "atspi-report.json").write_text(json.dumps(test.REPORT, indent=2))
+        suffix = os.environ.get("LIBREHARP_SCALE_CASE", "")
+        name = "atspi-" + suffix + "-report.json" if suffix else "atspi-report.json"
+        (test.ZONE / name).write_text(json.dumps(test.REPORT, indent=2))
     raise SystemExit(code)

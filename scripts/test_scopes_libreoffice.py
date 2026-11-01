@@ -106,19 +106,23 @@ def main():
         "This is [a] example." in window.getControl("message").getModel().Text
         and "Before: This is a example." in window.getControl("message").getModel().Text,
     )
-    window.setPosSize(0, 0, 300, 440, 15)
+    minimum_height = panel.getRealInterface().getHeightForWidth(300).Preferred
+    window.setPosSize(0, 0, 300, minimum_height, 15)
     test.record(
-        "Compact sidebar fits its minimum height",
-        wait_for(lambda: window.getControl("status").getPosSize().Y < 440)
+        "Sidebar controls fit its preferred height",
+        wait_for(lambda: window.getControl("status").getPosSize().Y < minimum_height)
         and window.getControl("status").getPosSize().Y + window.getControl("status").getPosSize().Height
-        <= 440,
+        <= minimum_height,
     )
     short_height = window.getControl("message").getPosSize().Height
     window.setPosSize(0, 0, 420, 800, 15)
     test.record(
         "Additional sidebar height goes to the explanation",
-        wait_for(lambda: window.getControl("message").getPosSize().Height >= short_height + 350)
-        and window.getControl("more").getPosSize().Height == 28,
+        wait_for(
+            lambda: window.getControl("message").getPosSize().Height >= short_height + 800 - minimum_height
+        )
+        and window.getControl("more").getPosSize().Height
+        >= window.getControl("more").getMinimumSize().Height,
     )
     window.getControl("apply").getAccessibleContext().doAccessibleAction(0)
     test.record(

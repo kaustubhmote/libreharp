@@ -90,8 +90,11 @@ class SidebarReview(Review):
     def __init__(self, app, document, parent):
         self.app, self.ctx, self.document = app, app.ctx, document
         self.model = Models()
-        self.dialog = service(self.ctx, "awt.UnoControlContainer")
-        self.dialog.setModel(service(self.ctx, "awt.UnoControlContainerModel"))
+        self.dialog = service(self.ctx, "awt.UnoControlDialog")
+        viewport_model = service(self.ctx, "awt.UnoControlDialogModel")
+        viewport_model.Decoration = False
+        viewport_model.VScroll = True
+        self.dialog.setModel(viewport_model)
         self.dialog.createPeer(service(self.ctx, "awt.Toolkit"), parent)
         self.actions = []
         self.control_names = []
@@ -150,7 +153,7 @@ class SidebarReview(Review):
             284,
             26,
             Dropdown=True,
-            StringItemList=("Remember for this document", "Remember for this project", "Remember everywhere"),
+            StringItemList=("This document", "This project", "Everywhere"),
             SelectedItems=(0,),
             HelpText="Scope for Disable rule and Remember word. Save the document to retain document choices.",
         )
@@ -176,16 +179,28 @@ class SidebarReview(Review):
             HelpText="Choose an action, then press Go",
         )
         self.button("run", "~Go", 218, 488, 74, self.run_action)
-        self.add("auto", "CheckBox", 8, 522, 194, 24, Label="Recheck after ~edits", State=1)
+        self.add(
+            "auto",
+            "CheckBox",
+            8,
+            522,
+            194,
+            24,
+            Label="Auto r~echeck",
+            State=1,
+            HelpText="Recheck one second after document edits",
+        )
         self.button("check", "~Check", 208, 522, 84, self.check)
         self.add("status", "FixedText", 8, 552, 284, 40, Label="Ready", MultiLine=True)
         self.resize = Resize(self)
         self.dialog.addWindowListener(self.resize)
         document.addModifyListener(self.modify)
+        self.dialog.setPosSize(0, 0, 300, 600, 12)
         self.dialog.setVisible(True)
         app.windows.append(self)
         self.layout(300, 600)
         accessibility.configure(self, sidebar=True)
+        layout.connect_viewport(self)
         self.post(self.check)
 
     def add(self, name, kind, x, y, width, height, **props):
@@ -225,19 +240,74 @@ class SidebarReview(Review):
             return
         scale = layout.sidebar_scale(self.dialog.getControl("check"))
         self.minimum_width = layout.sidebar_width(self, scale)
-        self.minimum_height = round(440 * scale)
-        self.preferred_height = round(600 * scale)
-        height = max(self.minimum_height, height if height is not None else self.dialog.getPosSize().Height)
-        message_height = height - round(258 * scale)
-        x_scale = max(self.minimum_width, width) / 300
-        for name, (x, y, w, h) in self.geometry.items():
-            if name == "message":
-                y, h = round(y * scale), message_height
-            elif y >= 422:
-                y, h = round((y - 342) * scale) + message_height, round(h * scale)
-            else:
-                y, h = round(y * scale), round(h * scale)
-            self.dialog.getControl(name).setPosSize(round(x * x_scale), y, round(w * x_scale), h, 15)
+        row = max(
+            round(28 * scale),
+            *(
+                self.dialog.getControl(n).getMinimumSize().Height
+                for n in ("issues", "suggestions", "scope", "more")
+            ),
+        )
+        margin, gap = round(8 * scale), round(6 * scale)
+        bars = getattr(self, "viewport_bars", {})
+        scroll = {axis: bar.getCurrentValue() for axis, bar in bars.items()}
+        for bar in bars.values():
+            bar.setCurrentValue(0)
+        bar_width = getattr(self, "viewport_insets", {}).get("x", round(14 * scale))
+        available = max(1, width - 2 * margin - bar_width)
+
+        def required(name):
+            control = self.dialog.getControl(name)
+            label = getattr(control.getModel(), "Label", "").replace("~", "")
+            if label:
+                return round(
+                    layout.font(control).getStringWidth(label) + (28 if name == "auto" else 16) * scale
+                )
+            return round(90 * scale)
+
+        def pack(names, height):
+            lines, current, used = [], [], 0
+            for name in names:
+                need = min(available, required(name))
+                if current and used + gap + need > available:
+                    lines.append((current, height))
+                    current, used = [], 0
+                used += (gap if current else 0) + need
+                current.append(name)
+            if current:
+                lines.append((current, height))
+            return lines
+
+        header = [(["issues"], row)] + pack(["previous", "next", "ignore"], round(28 * scale))
+        footer = (
+            pack(["suggestions", "apply"], row)
+            + [(["scope"], row)]
+            + pack(["more", "run"], row)
+            + pack(["auto", "check"], round(28 * scale))
+            + [(["status"], round(40 * scale))]
+        )
+        fixed = 2 * margin + gap * (len(header) + len(footer)) + sum(h for _, h in header + footer)
+        self.minimum_height = fixed + round(182 * scale)
+        self.preferred_height = self.minimum_height + round(160 * scale)
+        height = height if height is not None else self.dialog.getPosSize().Height
+        content_height = max(self.minimum_height, height)
+        rows = header + [(["message"], content_height - fixed)] + footer
+        y = margin
+        for names, h in rows:
+            minima = [required(n) for n in names]
+            spare = max(0, available - gap * (len(names) - 1) - sum(minima))
+            x = margin
+            for i, name in enumerate(names):
+                w = available if len(names) == 1 else minima[i] + spare // len(names)
+                self.dialog.getControl(name).setPosSize(x, y, w, h, 15)
+                x += w + gap
+            y += h + gap
+        logical = self.dialog.getPeer().convertSizeToLogic(
+            uno.createUnoStruct("com.sun.star.awt.Size", width, content_height),
+            uno.getConstantByName("com.sun.star.util.MeasureUnit.APPFONT"),
+        )
+        self.dialog.getModel().ScrollHeight = logical.Height
+        for axis, value in scroll.items():
+            bars[axis].setCurrentValue(min(value, bars[axis].getMaximumValue()))
 
     def details(self):
         super().details()
@@ -352,7 +422,9 @@ class Panel(unohelper.Base, XUIElement, XToolPanel, XSidebarPanel, XComponent):
         self.review.layout(width)
         result = uno.createUnoStruct("com.sun.star.ui.LayoutSize")
         result.Minimum, result.Preferred, result.Maximum = (
-            self.review.minimum_height,
+            # The panel owns scrolling. A content-sized minimum makes Writer
+            # clip the entire panel in an outer viewport that cannot reveal focus.
+            0,
             self.review.preferred_height,
             -1,
         )

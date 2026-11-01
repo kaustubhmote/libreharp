@@ -54,14 +54,20 @@ def main():
             manager = None
             try:
                 ready(["xdpyinfo", "-display", display])
+                manager_env = dict(env)
+                manager_env["XDG_CONFIG_HOME"] = str(Path(directory) / "config")
+                Path(manager_env["XDG_CONFIG_HOME"]).mkdir()
+                for setting in ("GDK_SCALE", "GDK_DPI_SCALE", "SAL_FORCEDPI", "SAL_USE_VCLPLUGIN"):
+                    manager_env.pop(setting, None)
                 manager = subprocess.Popen(
                     ["dbus-run-session", "--", "mutter", "--x11", "--display=" + display, "--sm-disable"],
-                    env=env,
+                    env=manager_env,
                     stdout=log,
                     stderr=log,
                     start_new_session=True,
                 )
                 ready(["xprop", "-display", display, "-root", "_NET_SUPPORTING_WM_CHECK"], "window id")
+                time.sleep(1)
                 return subprocess.run(sys.argv[1:], env=env).returncode
             finally:
                 if manager:

@@ -3,6 +3,7 @@
 import json
 import os
 import subprocess
+import time
 import traceback
 
 import test_libreoffice as test
@@ -41,6 +42,7 @@ def press(window, sequence):
 
 
 def capture(xid, name):
+    time.sleep(0.25)  # Let native resize/scroll repaints reach the X server before capture.
     subprocess.run(
         ["import", "-window", xid, str(test.ZONE / f"scaling-{CASE}-{name}.png")],
         check=True,
@@ -65,14 +67,17 @@ def check_text(window):
     for name in window.control_names:
         control = window.dialog.getControl(name)
         model = control.getModel()
-        if not model.supportsService("com.sun.star.awt.UnoControlButtonModel"):
+        checkbox = model.supportsService("com.sun.star.awt.UnoControlCheckBoxModel")
+        if not (checkbox or model.supportsService("com.sun.star.awt.UnoControlButtonModel")):
             continue
         metrics = layout.font(control).getFontMetric()
         rect = control.getPosSize()
         text_width = layout.font(control).getStringWidth(model.Label.replace("~", ""))
-        if rect.Height < metrics.Ascent + metrics.Descent or rect.Width < text_width + 8:
+        if rect.Height < metrics.Ascent + metrics.Descent or rect.Width < text_width + (
+            24 if checkbox else 8
+        ):
             failures.append(name)
-    test.record(type(window).__name__ + " button labels fit at this scale", not failures)
+    test.record(type(window).__name__ + " action labels fit at this scale", not failures)
 
 
 def main():
@@ -95,15 +100,18 @@ def main():
         for cls in (Settings, RuleBrowser, ScopedSettings, Vocabulary, Migration, Review):
             window = cls(app) if cls is Settings else cls(app, doc)
             window.show()
-            assert wait_for(lambda: hasattr(window, "viewport_listeners"))
+            assert wait_for(lambda: getattr(window, "viewport_ready", False))
             xid = window_id(window.model.Title)
             press(window, "Tab")
             rect = window.dialog.getPosSize()
+            area = service(ctx, "awt.Toolkit").getWorkArea()
             test.REPORT["dialogs"][cls.__name__] = dict(
                 width=rect.Width,
                 height=rect.Height,
                 horizontal_scroll=window.model.HScroll,
                 vertical_scroll=window.model.VScroll,
+                display_width=area.Width,
+                display_height=area.Height,
             )
             test.record(
                 cls.__name__ + " fits the display",
@@ -152,6 +160,9 @@ def main():
         )
         check_text(panel)
         rectangles = [panel.dialog.getControl(n).getPosSize() for n in panel.control_names]
+        test.REPORT["sidebar"]["controls"] = {
+            n: [r.X, r.Y, r.Width, r.Height] for n, r in zip(panel.control_names, rectangles)
+        }
         test.record(
             "Sidebar controls fit its advertised minimum size",
             all(
@@ -176,7 +187,51 @@ def main():
             "Extra sidebar height still goes to the explanation",
             panel.dialog.getControl("message").getPosSize().Height == before + 200,
         )
+        panel.dialog.setPosSize(0, 0, 300, 400, 15)
+        panel.layout(300, 400)
+        check_text(panel)
+        test.record(
+            "Narrow sidebar keeps every control within its assigned width",
+            all(
+                (r := panel.dialog.getControl(n).getPosSize()).X >= 0 and r.X + r.Width <= 300
+                for n in panel.control_names
+            ),
+        )
+        layout.focus_control(panel, "status")
+        test.record("Short sidebar scrolls Status into view", wait_for(lambda: inside(panel, "status")))
+        layout.focus_control(panel, "issues")
+        test.record(
+            "Sidebar can return to Findings after scrolling", wait_for(lambda: inside(panel, "issues"))
+        )
         panel.close()
+        frame = doc.CurrentController.Frame
+        doc.CurrentController.ViewSettings.ZoomValue = 100
+        frame.ContainerWindow.setPosSize(0, 0, area.Width, area.Height, 15)
+        xid = (
+            subprocess.check_output(
+                ["xdotool", "search", "--onlyvisible", "--name", "LibreHarp-scaling-test.odt"], text=True
+            )
+            .strip()
+            .splitlines()[-1]
+        )
+        subprocess.run(["xdotool", "windowactivate", "--sync", xid], check=True)
+        url = uno.createUnoStruct("com.sun.star.util.URL")
+        url.Complete, url.Protocol, url.Path = "org.libreharp:sidebar", "org.libreharp:", "sidebar"
+        frame.queryDispatch(url, "_self", 0).dispatch(url, ())
+        test.record(
+            "Installed sidebar opens at this scale",
+            wait_for(
+                lambda: (
+                    doc.CurrentController.Sidebar.Decks.hasByName("LibreHarpDeck")
+                    and doc.CurrentController.Sidebar.Decks.getByName("LibreHarpDeck").isActive()
+                )
+            ),
+        )
+        time.sleep(1)
+        capture(xid, "installed-sidebar")
+        subprocess.run(["xdotool", "key", "--clearmodifiers", "F8"], check=True)
+        time.sleep(0.3)
+        capture(xid, "installed-sidebar-status")
     finally:
         for window in list(app.windows):
             window.close()
