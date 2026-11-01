@@ -58,3 +58,11 @@ Permanent rule suppression must survive a new process. Dictionary changes must i
 - [ ] Spoken feedback and braille validation, theme/font/scaling matrix, and other operating systems.
 
 Version 0.4.0 remains a development release. Completed items have automated or recorded visual evidence; the remaining compatibility work is not implied by a passing Linux test suite.
+
+## Version 0.5.0 font and display scaling work
+
+- [ ] Measure native controls at normal, enlarged-font, and high-DPI settings in isolated LibreOffice sessions.
+- [ ] Size sidebar rows and minimum dimensions from native font/control metrics, retaining room for explanations.
+- [ ] Keep large dialogs within the display and make overflow reachable by mouse and keyboard.
+- [ ] Add scaling regressions and inspect screenshots at the tested sizes.
+- [ ] Run regression suites, build a reproducible package, commit the release, and upgrade the usual LibreOffice installation.

@@ -4,6 +4,8 @@ import uno
 import unohelper
 from com.sun.star.awt import XCallback, XKeyHandler
 
+from .layout import focus_control
+
 NAMES = {
     "issues": "Findings",
     "message": "Finding explanation and context",
@@ -123,7 +125,7 @@ class Keys(unohelper.Base, XKeyHandler):
             return False
 
         if status:
-            self.pending = (key, self.owner.dialog.getControl("status").setFocus)
+            self.pending = (key, lambda: focus_control(self.owner, "status"))
         elif escape:
             expanded = uno.getConstantByName("com.sun.star.accessibility.AccessibleStateType.EXPANDED")
             if any(
@@ -138,9 +140,12 @@ class Keys(unohelper.Base, XKeyHandler):
         return True
 
     def keyReleased(self, event):
-        # Native combo boxes can consume Escape before the toolkit's keyPressed.
-        # Keep the extension's Escape action available from those controls too.
-        if self.pending is None and event.KeyCode == uno.getConstantByName("com.sun.star.awt.Key.ESCAPE"):
+        # Native GTK controls can consume these presses before the toolkit handler.
+        # The release path retains the same ownership and modifier checks.
+        if self.pending is None and event.KeyCode in (
+            uno.getConstantByName("com.sun.star.awt.Key.ESCAPE"),
+            uno.getConstantByName("com.sun.star.awt.Key.F8"),
+        ):
             self.keyPressed(event)
         if self.pending and event.KeyCode == self.pending[0]:
             _, fn = self.pending
@@ -200,4 +205,4 @@ def configure(owner, sidebar=False):
 
 def focus_first(owner):
     if owner.focus_name:
-        owner.dialog.getControl(owner.focus_name).setFocus()
+        focus_control(owner, owner.focus_name)

@@ -12,7 +12,7 @@ from com.sun.star.lang import XInitialization, XServiceDisplayName, XServiceInfo
 from com.sun.star.linguistic2 import XLinguServiceEventBroadcaster, XProofreader
 from com.sun.star.util import XModifyListener
 
-from . import accessibility
+from . import accessibility, layout
 from .catalog import load_catalog
 from .checker import Checker, replacement_is_current
 from .engine import Engine
@@ -189,10 +189,10 @@ class Action(unohelper.Base, XActionListener):
             self.fn()
         except ValueError as exc:
             self.owner.status(str(exc))
-            self.owner.dialog.getControl("status").setFocus()
+            layout.focus_control(self.owner, "status")
         except Exception as exc:
             self.owner.status(str(exc))
-            self.owner.dialog.getControl("status").setFocus()
+            layout.focus_control(self.owner, "status")
             self.owner.app.log_error()
 
     def disposing(self, event):
@@ -308,6 +308,7 @@ class Window:
 
     def show(self):
         self.return_focus = self.return_focus or accessibility.current_focus(self.app, exclude=self)
+        layout.prepare_dialog(self)
         self.dialog.createPeer(service(self.ctx, "awt.Toolkit"), None)
         accessibility.configure(self)
         self.closing = Closing(self)
@@ -315,6 +316,7 @@ class Window:
         self.dialog.setVisible(True)
         self.app.windows.append(self)
         accessibility.focus_first(self)
+        service(self.ctx, "awt.AsyncCallback").addCallback(Callback(lambda: layout.fit_dialog(self)), None)
 
     def close(self):
         if self.closed:

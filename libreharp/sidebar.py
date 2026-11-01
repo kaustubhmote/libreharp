@@ -8,7 +8,7 @@ from com.sun.star.awt import XWindowListener
 from com.sun.star.lang import XComponent, XServiceInfo
 from com.sun.star.ui import XSidebarPanel, XToolPanel, XUIElement, XUIElementFactory
 
-from . import accessibility
+from . import accessibility, layout
 from .rule_help import finding_text
 from .scopes import ScopeTarget
 from .uno_app import Action, Callback, Modify, Review, RuleBrowser, Selection, runtime, service
@@ -223,15 +223,21 @@ class SidebarReview(Review):
     def layout(self, width, height=None):
         if self.closed:
             return
-        height = max(440, height if height is not None else self.dialog.getPosSize().Height)
-        message_height = height - 258
-        scale = max(300, width) / 300
+        scale = layout.sidebar_scale(self.dialog.getControl("check"))
+        self.minimum_width = layout.sidebar_width(self, scale)
+        self.minimum_height = round(440 * scale)
+        self.preferred_height = round(600 * scale)
+        height = max(self.minimum_height, height if height is not None else self.dialog.getPosSize().Height)
+        message_height = height - round(258 * scale)
+        x_scale = max(self.minimum_width, width) / 300
         for name, (x, y, w, h) in self.geometry.items():
             if name == "message":
-                h = message_height
+                y, h = round(y * scale), message_height
             elif y >= 422:
-                y += message_height - 342
-            self.dialog.getControl(name).setPosSize(round(x * scale), y, round(w * scale), h, 15)
+                y, h = round((y - 342) * scale) + message_height, round(h * scale)
+            else:
+                y, h = round(y * scale), round(h * scale)
+            self.dialog.getControl(name).setPosSize(round(x * x_scale), y, round(w * x_scale), h, 15)
 
     def details(self):
         super().details()
@@ -345,11 +351,15 @@ class Panel(unohelper.Base, XUIElement, XToolPanel, XSidebarPanel, XComponent):
     def getHeightForWidth(self, width):
         self.review.layout(width)
         result = uno.createUnoStruct("com.sun.star.ui.LayoutSize")
-        result.Minimum, result.Preferred, result.Maximum = 440, 600, -1
+        result.Minimum, result.Preferred, result.Maximum = (
+            self.review.minimum_height,
+            self.review.preferred_height,
+            -1,
+        )
         return result
 
     def getMinimalWidth(self):
-        return 300
+        return self.review.minimum_width
 
     def addEventListener(self, listener):
         self.listeners.append(listener)

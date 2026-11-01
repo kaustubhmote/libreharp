@@ -101,3 +101,12 @@ Validation reports and final counts are retained in the versioned report files u
 - Inspected the installed sidebar at 1280 by 920 and 1000 by 720, plus Review, rule browser, personal settings, scoped settings, and vocabulary windows. The explanation retains the sidebar's available height; controls and status text fit at the tested scale.
 - The 1,000-paragraph fixture completed review in 15.392 seconds. This is a local measurement, not a performance guarantee.
 - The versioned reports and package checksum are retained under `docs/`. The final package contains 29 verified payload files and reproduces byte for byte. The generated package, screenshots, and test profile remain ignored by Git.
+
+## Font and display scaling continuation
+
+- Measured real LibreOffice controls with enlarged GTK fonts and forced DPI. The fixed sidebar rows did not follow the font metrics, and the Settings dialog extended below a 1080-pixel display.
+- Sidebar row heights, minimum width, and minimum/preferred panel heights now follow native font and DPI measurements. Extra height still goes to the explanation. Button widths include measured label text.
+- Dialogs retain native text size, fit the rendered viewport to the primary display, and expose native scrollbars. Wide multiline fields reflow to the visible width. Keyboard focus reveals a field through the same scrollbar used by the mouse.
+- LibreOffice's `ScrollTop` and `ScrollLeft` setters apply relative movement. The implementation uses the native scrollbar's absolute accessible value instead. Compound selectors require accessibility focus events in addition to ordinary control focus events. Stale events cannot override a newer focused control.
+- Created a nested Xephyr test display with its own Mutter window manager and private D-Bus session. This avoids false failures when another desktop window becomes active while the test sends keys. Test display settings and font scaling are process-local.
+- Added real-display tests for all six dialogs, full Settings tab traversal, status reveal, button text fit, sidebar minimum-size bounds, overlap, and explanation growth. Release validation and installation follow after the full matrix and regressions.
