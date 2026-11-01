@@ -12,6 +12,7 @@ from com.sun.star.lang import XInitialization, XServiceDisplayName, XServiceInfo
 from com.sun.star.linguistic2 import XLinguServiceEventBroadcaster, XProofreader
 from com.sun.star.util import XModifyListener
 
+from . import accessibility
 from .catalog import load_catalog
 from .checker import Checker, replacement_is_current
 from .engine import Engine
@@ -186,8 +187,12 @@ class Action(unohelper.Base, XActionListener):
     def actionPerformed(self, event):
         try:
             self.fn()
+        except ValueError as exc:
+            self.owner.status(str(exc))
+            self.owner.dialog.getControl("status").setFocus()
         except Exception as exc:
             self.owner.status(str(exc))
+            self.owner.dialog.getControl("status").setFocus()
             self.owner.app.log_error()
 
     def disposing(self, event):
@@ -259,8 +264,23 @@ class Window:
         self.dialog.setModel(self.model)
         self.actions = []
         self.closed = False
+        self.control_names = []
+        self.mnemonics = set()
+        self.return_focus = accessibility.current_focus(app)
 
     def add(self, name, kind, x, y, width, height, **props):
+        if name == "status":
+            kind = "Edit"
+            props.update(
+                Text=props.pop("Label", ""),
+                ReadOnly=True,
+                MultiLine=True,
+                VScroll=True,
+                Border=0,
+                HelpText="Status and errors. Press F8 to read this field.",
+            )
+        if kind == "Button":
+            props["Label"] = accessibility.mnemonic(props["Label"], self.mnemonics)
         model = self.model.createInstance("com.sun.star.awt.UnoControl" + kind + "Model")
         for key, value in {
             "Name": name,
@@ -272,31 +292,56 @@ class Window:
         }.items():
             setattr(model, key, value)
         self.model.insertByName(name, model)
+        self.control_names.append(name)
         return model
 
     def button(self, name, text, x, y, width, fn):
-        self.add(name, "Button", x, y, width, 16, Label=text)
+        model = self.add(name, "Button", x, y, width, 16, Label=text)
+        if name == "close":
+            model.PushButtonType = 2  # Native Cancel semantics, including Escape from combo boxes.
         listener = Action(self, fn)
         self.actions.append(listener)
         self.dialog.getControl(name).addActionListener(listener)
 
     def status(self, message):
-        self.model.getByName("status").Label = message[:300]
+        self.model.getByName("status").Text = message
 
     def show(self):
+        self.return_focus = self.return_focus or accessibility.current_focus(self.app, exclude=self)
         self.dialog.createPeer(service(self.ctx, "awt.Toolkit"), None)
+        accessibility.configure(self)
         self.closing = Closing(self)
         self.dialog.addTopWindowListener(self.closing)
         self.dialog.setVisible(True)
         self.app.windows.append(self)
+        accessibility.focus_first(self)
 
     def close(self):
         if self.closed:
             return
         self.closed = True
+        if hasattr(self, "keys"):
+            self.key_toolkit.removeKeyHandler(self.keys)
         self.dialog.dispose()
         if self in self.app.windows:
             self.app.windows.remove(self)
+        if self.return_focus:
+
+            def restore():
+                control, parent = self.return_focus
+                if not parent.closed:
+                    try:
+                        top = (
+                            parent.document.CurrentController.Frame.ContainerWindow
+                            if hasattr(parent, "geometry")
+                            else parent.dialog
+                        )
+                        top.toFront()
+                        control.setFocus()
+                    except Exception:
+                        pass
+
+            service(self.ctx, "awt.AsyncCallback").addCallback(Callback(restore), None)
 
 
 def paragraphs(document):

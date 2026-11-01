@@ -86,6 +86,11 @@ def main():
         ),
     )
     window = panel.getRealInterface().Window
+    accessible = panel.getRealInterface().createAccessible(None)
+    test.record(
+        "Installed panel exposes its accessible control container",
+        accessible.getAccessibleContext().getAccessibleChildCount() > 0,
+    )
     window.setPosSize(0, 0, 360, 672, 15)
     test.record(
         "Installed sidebar completes scoped review",

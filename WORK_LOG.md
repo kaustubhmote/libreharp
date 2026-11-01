@@ -82,3 +82,22 @@ Validation reports and final counts are retained in the versioned report files u
 - Native accessibility actions exercised the relocated scope action, navigation boundaries, selection after ignore, and Apply/Undo. Tests wait for asynchronous actions before reading the resulting UI state.
 - Inspected the expanded sidebar and rule-browser explanation areas. Captured the sidebar at both standard and smaller Writer window sizes.
 - Verified the 28-file OXT payload and a deterministic rebuild. The release checksum and suite counts are saved in `docs/v0.3.0-validation.json`.
+
+## 2026-11-01, version 0.4.0 accessibility continuation
+
+- Added explicit accessible names to the sidebar and all six dialogs. Native inspection caught incorrect automatic label associations for the dialect selector, personal words, and import/export path. The peer property is `AccessibleName`; setting help text alone does not supply these names.
+- Added a native tab controller to the sidebar. A plain UNO control container does not establish traversal from `TabIndex` alone. Dialogs now exclude static labels from tab stops, and the vocabulary editor keeps each entry beside its actions. Buttons receive unique mnemonics within each dialog.
+- Changed status labels to read-only text controls. Messages retain their full text and emit native text-change events. F8 focuses Status, and action validation failures move focus there automatically. Expected validation failures no longer appear as component exceptions in the diagnostic log.
+- Scoped keyboard handlers to their own dialog or focused sidebar controls. Escape closes a dialog or returns to Writer while keeping the sidebar open. Child dialogs restore their launching control. Background review does not take focus. F8 in Writer retains Writer's normal behavior.
+- Native keyboard testing exposed focus timing problems. Status and Escape actions now run through a UI callback after key release. The event source identifies the receiving window when the active-window query changes during dispatch. Native combo boxes can consume Escape presses, so the handler also handles their release path.
+- The installed sidebar's `createAccessible` method now returns its accessible control container. Added a factory regression check. An initial inspection through Writer's generic UNO tree stopped at embedded GTK widgets. The independent AT-SPI probe reaches the actual installed sidebar and confirms its control names and initial Findings focus.
+- Tested in the isolated LibreOffice profile and a private D-Bus session. No ordinary profile, user document, or desktop accessibility preference was changed. Orca speech and braille output were not evaluated.
+- Updated the keyboard guide, test commands, and remaining plan. Theme/font/scaling coverage, spoken feedback, and platform compatibility remain open.
+
+### Version 0.4.0 validation
+
+- 32 unit/engine tests passed, plus 134 native LibreOffice checks: 28 baseline, 27 sidebar/scope, 30 extended, 17 complex-document, and 32 keyboard/accessibility checks.
+- 13 additional checks passed through the external GTK3/AT-SPI bridge. They cover Settings names and status text/focus, installed sidebar controls, and Findings focus after the menu command.
+- Inspected the installed sidebar at 1280 by 920 and 1000 by 720, plus Review, rule browser, personal settings, scoped settings, and vocabulary windows. The explanation retains the sidebar's available height; controls and status text fit at the tested scale.
+- The 1,000-paragraph fixture completed review in 15.392 seconds. This is a local measurement, not a performance guarantee.
+- The versioned reports and package checksum are retained under `docs/`. The final package contains 29 verified payload files and reproduces byte for byte. The generated package, screenshots, and test profile remain ignored by Git.

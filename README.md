@@ -2,15 +2,17 @@
 
 An independent LibreOffice Writer extension with bundled Harper, a dockable review sidebar, persistent grammar preferences, personal words, and terminology rules.
 
-Version 0.3.0 is a Linux x86-64 development release. See PLAN.md for completed milestones and remaining work, and WORK_LOG.md for decisions and test evidence.
+Version 0.4.0 is a Linux x86-64 development release. See PLAN.md for completed milestones and remaining work, and WORK_LOG.md for decisions and test evidence.
 
 ## Use
 
-Install `build/LibreHarp_v0.3.0.oxt` through LibreOffice's Extension Manager and restart LibreOffice. In Tools → Options → Languages and Locales → Writing Aids, enable LibreHarp as the English grammar checker. Deselect competing English grammar checkers if they hide its results. Hunspell spelling can remain enabled. Enable automatic spell and grammar checking for inline feedback.
+Install `build/LibreHarp_v0.4.0.oxt` through LibreOffice's Extension Manager and restart LibreOffice. In Tools → Options → Languages and Locales → Writing Aids, enable LibreHarp as the English grammar checker. Deselect competing English grammar checkers if they hide its results. Hunspell spelling can remain enabled. Enable automatic spell and grammar checking for inline feedback.
 
 Set the text language to English and choose LibreHarp → Open sidebar. Select a finding from the top dropdown, read its context and explanation, then choose a replacement and Apply. Previous and Next move through findings. The explanation grows with the panel's height. The sidebar keeps the nearest finding selected after edits and ignores. It rechecks one second after document edits while open. Replacements support Writer's Undo and track-changes mode. The separate Review document window remains available.
 
 Use More actions and Go to locate the text, disable its rule, remember a word, browse rules, or open settings and vocabulary. Eight common rules include original explanations and before/after examples checked against bundled Harper. Other findings retain Harper's explanation. The rule browser also shows these examples.
+
+Use Tab and Shift+Tab to navigate controls, Space to activate a focused button, and underlined button mnemonics with Alt. F8 focuses the readable Status field. Escape closes a dialog or returns from the sidebar to Writer. Validation errors focus Status, and closing a child dialog restores its launching control. See [keyboard and accessibility details](docs/ACCESSIBILITY.md) for verification and remaining limits.
 
 Choose the sidebar's scope before using More actions → Disable rule or Remember word: this document, this project, or everywhere. Document choices are stored inside the document and require saving the document to persist after closing it. Project choices are stored in `.libreharp.json`. Personal choices are stored in the LibreOffice profile.
 
@@ -63,6 +65,7 @@ uv run --no-project /path/to/libreoffice/program/python scripts/test_libreoffice
 uv run --no-project /path/to/libreoffice/program/python scripts/test_scopes_libreoffice.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_extended_writer.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_complex_writer.py
+uv run --no-project /path/to/libreoffice/program/python scripts/test_accessibility.py
 uv run --no-project /path/to/libreoffice/program/python scripts/preview_libreoffice.py
 uv run --no-project /path/to/libreoffice/program/python scripts/preview_sidebar.py
 ```
@@ -77,4 +80,4 @@ English grammar and spelling only. No remote service is used. Harper 3.0.0 is bu
 
 Review covers body text, tables, frames, footnotes, endnotes, and headers/footers of used page styles. It checks contiguous English text portions and preserves their paragraph offsets. Field contents are excluded. Text on either side can be checked when Writer exposes matching text ranges; replacements use those native ranges and cannot overwrite fields. Unsupported paragraph representations and wholly non-English paragraphs are skipped and counted in the status. Inline proofreading follows Writer's language selection. Personal words suppress exact spelling findings; they do not teach Harper grammatical word classes. Paragraphs exceeding Harper's 120 KB limit produce an error instead of a clean result.
 
-ODT and DOCX document-setting round trips, merged and nested table edits, footnote replacements, input-field preservation, and replacement alongside existing tracked changes are tested. A 1,000-paragraph review completed in about 15 seconds on the development machine; this is one local measurement, not a performance guarantee. Overlapping redlines, other field types, other file formats, accessibility, and high-DPI behavior need broader coverage. Manual edits to a project file are picked up on the next check; use Check after changing one externally.
+ODT and DOCX document-setting round trips, merged and nested table edits, footnote replacements, input-field preservation, and replacement alongside existing tracked changes are tested. A 1,000-paragraph review completed in about 15 seconds on the development machine; this is one local measurement, not a performance guarantee. Native keyboard and accessibility-tree checks are covered, along with a GTK3/AT-SPI bridge probe. Spoken screen-reader output, high-DPI behavior, overlapping redlines, other field types, and other file formats need broader coverage. Manual edits to a project file are picked up on the next check; use Check after changing one externally.

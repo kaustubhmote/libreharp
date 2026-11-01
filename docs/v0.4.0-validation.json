@@ -1,0 +1,42 @@
+{
+  "version": "0.4.0",
+  "unit_tests": 32,
+  "libreoffice_checks": 134,
+  "atspi_checks": 13,
+  "suites": {
+    "report": 28,
+    "scopes-report": 27,
+    "extended-report": 30,
+    "complex-report": 17,
+    "accessibility-report": 32,
+    "atspi-report": 13
+  },
+  "package_sha256": "c940324656d21905ebaadf5dc825554211f24c98e3d01dc688f5cacc08dad4f6",
+  "package_bytes": 14657372,
+  "deterministic": true,
+  "libreoffice": "26.8",
+  "harper": "3.0.0",
+  "normal_profile_modified": false,
+  "visible_sidebar_activation": true,
+  "visible_windows": [
+    "sidebar-writer.png",
+    "sidebar-compact.png",
+    "review-window.png",
+    "rule-browser.png",
+    "settings-window.png",
+    "scoped-settings.png",
+    "vocabulary-editor.png"
+  ],
+  "accessibility": {
+    "native_keyboard": true,
+    "gtk3_atspi_settings": true,
+    "gtk3_atspi_installed_sidebar": true,
+    "speech_listening": false,
+    "braille": false,
+    "theme_font_dpi_matrix": false
+  },
+  "performance": {
+    "paragraphs": 1000,
+    "review_seconds": 15.392
+  }
+}

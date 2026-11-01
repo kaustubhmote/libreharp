@@ -40,6 +40,15 @@ try:
     )
     frame = doc.CurrentController.Frame
     frame.ContainerWindow.setPosSize(20, 20, 1280, 920, 15)
+    test_xid = (
+        subprocess.check_output(
+            ["xdotool", "search", "--onlyvisible", "--name", "LibreHarp-sidebar-test.odt"], text=True
+        )
+        .strip()
+        .splitlines()[-1]
+    )
+    subprocess.run(["xdotool", "windowactivate", "--sync", test_xid], check=True)
+    time.sleep(0.2)
     url = uno.createUnoStruct("com.sun.star.util.URL")
     url.Complete, url.Protocol, url.Path = "org.libreharp:sidebar", "org.libreharp:", "sidebar"
     dispatch = frame.queryDispatch(url, "_self", 0)

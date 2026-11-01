@@ -8,6 +8,7 @@ from com.sun.star.awt import XWindowListener
 from com.sun.star.lang import XComponent, XServiceInfo
 from com.sun.star.ui import XSidebarPanel, XToolPanel, XUIElement, XUIElementFactory
 
+from . import accessibility
 from .rule_help import finding_text
 from .scopes import ScopeTarget
 from .uno_app import Action, Callback, Modify, Review, RuleBrowser, Selection, runtime, service
@@ -27,6 +28,7 @@ def open_sidebar(app, frame, attempt=0):
         if sidebar.Decks.hasByName("LibreHarpDeck"):
             sidebar.Decks.getByName("LibreHarpDeck").activate(True)
             sidebar.showDecks(True)
+            service(app.ctx, "awt.AsyncCallback").addCallback(Callback(lambda: focus_panel(app, frame)), None)
             return
         if attempt >= 30:
             raise RuntimeError(
@@ -43,6 +45,17 @@ def open_sidebar(app, frame, attempt=0):
         timer.start()
     except Exception:
         app.log_error()
+
+
+def focus_panel(app, frame):
+    for window in app.windows:
+        if (
+            isinstance(window, SidebarReview)
+            and not window.closed
+            and window.document.CurrentController.Frame == frame
+        ):
+            accessibility.focus_first(window)
+            break
 
 
 class Models:
@@ -81,6 +94,8 @@ class SidebarReview(Review):
         self.dialog.setModel(service(self.ctx, "awt.UnoControlContainerModel"))
         self.dialog.createPeer(service(self.ctx, "awt.Toolkit"), parent)
         self.actions = []
+        self.control_names = []
+        self.return_focus = None
         self.closed = False
         self.rows, self.generation, self.timer = [], 0, None
         self.pending = False
@@ -170,9 +185,20 @@ class SidebarReview(Review):
         self.dialog.setVisible(True)
         app.windows.append(self)
         self.layout(300, 600)
+        accessibility.configure(self, sidebar=True)
         self.post(self.check)
 
     def add(self, name, kind, x, y, width, height, **props):
+        if name == "status":
+            kind = "Edit"
+            props.update(
+                Text=props.pop("Label", ""),
+                ReadOnly=True,
+                MultiLine=True,
+                VScroll=True,
+                Border=0,
+                HelpText="Status and errors. Press F8 to read this field.",
+            )
         model = service(self.ctx, "awt.UnoControl" + kind + "Model")
         if model.getPropertySetInfo().hasPropertyByName("TabIndex"):
             model.TabIndex = len(self.model.controls)
@@ -183,6 +209,7 @@ class SidebarReview(Review):
         self.dialog.addControl(name, control)
         self.model.controls[name] = model
         self.geometry[name] = (x, y, width, height)
+        self.control_names.append(name)
         control.setPosSize(x, y, width, height, 15)
         control.setVisible(True)
         return model
@@ -311,7 +338,9 @@ class Panel(unohelper.Base, XUIElement, XToolPanel, XSidebarPanel, XComponent):
         return self.review.dialog
 
     def createAccessible(self, parent):
-        return self.review.dialog.getPeer()
+        # XToolPanel requires XAccessible, which the control implements. Its
+        # window peer is only XWindowPeer and cannot supply the panel subtree.
+        return self.review.dialog
 
     def getHeightForWidth(self, width):
         self.review.layout(width)

@@ -33,9 +33,9 @@ def review_rows(app, document, timeout=30):
     while review.pending and time.monotonic() < deadline:
         time.sleep(0.1)
     assert not review.pending, "Review timed out"
-    assert not review.model.getByName("status").Label.startswith("Check failed"), review.model.getByName(
+    assert not review.model.getByName("status").Text.startswith("Check failed"), review.model.getByName(
         "status"
-    ).Label
+    ).Text
     result = review.rows
     review.close()
     return result
