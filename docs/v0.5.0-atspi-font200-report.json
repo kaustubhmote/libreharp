@@ -1,0 +1,408 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "AT-SPI exposes Profile name",
+    "AT-SPI exposes English dialect",
+    "AT-SPI exposes Personal words",
+    "AT-SPI exposes Preferences import or export file",
+    "AT-SPI exposes Status",
+    "AT-SPI reads the status message",
+    "AT-SPI exposes status focus",
+    "Installed sidebar exposes Findings through AT-SPI",
+    "Installed sidebar exposes Finding explanation and context through AT-SPI",
+    "Installed sidebar exposes Suggested replacement through AT-SPI",
+    "Installed sidebar exposes More actions through AT-SPI",
+    "Installed sidebar exposes Status through AT-SPI",
+    "Installed Open sidebar focuses Findings",
+    "Installed sidebar F8 reveals and focuses Status"
+  ],
+  "errors": [],
+  "tree": [
+    {
+      "name": "LibreHarp \u2014 settings",
+      "role": "frame",
+      "focused": false,
+      "description": "",
+      "bounds": [
+        48,
+        107,
+        1504,
+        1093
+      ],
+      "focus_within": true
+    },
+    {
+      "name": "",
+      "role": "panel",
+      "focused": false,
+      "description": "",
+      "focus_within": true
+    },
+    {
+      "name": "",
+      "role": "panel",
+      "focused": false,
+      "description": "",
+      "focus_within": true
+    },
+    {
+      "name": "LibreHarp \u2014 settings",
+      "role": "dialog",
+      "focused": false,
+      "description": "",
+      "focus_within": true
+    },
+    {
+      "name": "Horizontal scroll bar",
+      "role": "scroll bar",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Vertical scroll bar",
+      "role": "scroll bar",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Profile name (save a new name to create a profile)",
+      "role": "label",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Profile name",
+      "role": "combo box",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Profile name",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Profile name",
+      "role": "list",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "General",
+      "role": "list item",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Scientific",
+      "role": "list item",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Load profile",
+      "role": "push button",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "English dialect",
+      "role": "combo box",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "English dialect",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "English dialect",
+      "role": "list",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "auto",
+      "role": "list item",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "American",
+      "role": "list item",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "British",
+      "role": "list item",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Australian",
+      "role": "list item",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Canadian",
+      "role": "list item",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Indian",
+      "role": "list item",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Sentence word limit (0 = Harper default)",
+      "role": "label",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Sentence word limit",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Profile rules: one RuleName=true or RuleName=false per line",
+      "role": "label",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Rule overrides",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Global rule overrides (take precedence over every profile; remove a line to reset)",
+      "role": "label",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Personal global rule overrides",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Personal words \u2014 one per line, case-sensitive",
+      "role": "label",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Terminology \u2014 one find => replacement per line",
+      "role": "label",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Personal words",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Preferred terminology",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Preferences import or export file",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Export saved",
+      "role": "push button",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Import",
+      "role": "push button",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Save and activate",
+      "role": "push button",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Close",
+      "role": "push button",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Status",
+      "role": "text",
+      "focused": true,
+      "description": "",
+      "bounds": [
+        85,
+        1027,
+        1445,
+        155
+      ],
+      "text": "Accessible bridge test completed.",
+      "focus_within": true
+    }
+  ],
+  "sidebar_controls": [
+    {
+      "name": "Findings",
+      "role": "combo box",
+      "focused": true,
+      "description": "",
+      "focus_within": true
+    },
+    {
+      "name": "Findings",
+      "role": "text",
+      "focused": true,
+      "description": "",
+      "focus_within": true
+    },
+    {
+      "name": "Findings",
+      "role": "list",
+      "focused": true,
+      "description": "",
+      "focus_within": true
+    },
+    {
+      "name": "Finding explanation and context",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Suggested replacement",
+      "role": "combo box",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Suggested replacement",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Suggested replacement",
+      "role": "list",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "More actions",
+      "role": "combo box",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "More actions",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "More actions",
+      "role": "list",
+      "focused": false,
+      "description": "",
+      "focus_within": false
+    },
+    {
+      "name": "Status",
+      "role": "text",
+      "focused": false,
+      "description": "",
+      "bounds": [
+        947,
+        1478,
+        240,
+        80
+      ],
+      "text": "1 suggestions \u00b7 harper-ls 3.0.0",
+      "focus_within": false
+    }
+  ],
+  "focused_sidebar_status": {
+    "name": "Status",
+    "role": "text",
+    "focused": true,
+    "description": "",
+    "bounds": [
+      947,
+      838,
+      240,
+      80
+    ],
+    "text": "1 suggestions \u00b7 harper-ls 3.0.0",
+    "focus_within": true
+  },
+  "writer_bounds": [
+    0,
+    99,
+    1282,
+    901
+  ],
+  "passed": true
+}

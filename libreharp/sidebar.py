@@ -4,7 +4,7 @@ import threading
 
 import uno
 import unohelper
-from com.sun.star.awt import XWindowListener
+from com.sun.star.awt import XAdjustmentListener, XWindowListener
 from com.sun.star.lang import XComponent, XServiceInfo
 from com.sun.star.ui import XSidebarPanel, XToolPanel, XUIElement, XUIElementFactory
 
@@ -90,15 +90,40 @@ class Resize(unohelper.Base, XWindowListener):
         self.owner.close()
 
 
+class Scroll(unohelper.Base, XAdjustmentListener):
+    def __init__(self, owner):
+        self.owner = owner
+
+    def adjustmentValueChanged(self, event):
+        if not self.owner.closed:
+            self.owner.scroll_to(event.Value)
+
+    def disposing(self, event):
+        pass
+
+
+class ScrollValue:
+    """The same pixel offset for native scrollbar events and keyboard reveal."""
+
+    def __init__(self, owner):
+        self.owner = owner
+
+    def getCurrentValue(self):
+        return self.owner.scroll_position
+
+    def getMaximumValue(self):
+        return max(0, self.owner.content_height - self.owner.dialog.getPosSize().Height)
+
+    def setCurrentValue(self, value):
+        self.owner.scroll_to(value)
+
+
 class SidebarReview(Review):
     def __init__(self, app, document, parent):
         self.app, self.ctx, self.document = app, app.ctx, document
         self.model = Models()
-        self.dialog = service(self.ctx, "awt.UnoControlDialog")
-        viewport_model = service(self.ctx, "awt.UnoControlDialogModel")
-        viewport_model.Decoration = False
-        viewport_model.VScroll = True
-        self.dialog.setModel(viewport_model)
+        self.dialog = service(self.ctx, "awt.UnoControlContainer")
+        self.dialog.setModel(service(self.ctx, "awt.UnoControlContainerModel"))
         self.dialog.createPeer(service(self.ctx, "awt.Toolkit"), parent)
         self.actions = []
         self.control_names = []
@@ -107,6 +132,17 @@ class SidebarReview(Review):
         self.rows, self.generation, self.timer = [], 0, None
         self.pending = False
         self.geometry = {}
+        self.positions = {}
+        self.scroll_position, self.content_height = 0, 0
+        self.scrollbar = service(self.ctx, "awt.UnoControlScrollBar")
+        scroll_model = service(self.ctx, "awt.UnoControlScrollBarModel")
+        scroll_model.Orientation = 1
+        if scroll_model.getPropertySetInfo().hasPropertyByName("Tabstop"):
+            scroll_model.Tabstop = False
+        self.scrollbar.setModel(scroll_model)
+        self.dialog.addControl("viewport_scrollbar", self.scrollbar)
+        self.scroll_listener = Scroll(self)
+        self.scrollbar.addAdjustmentListener(self.scroll_listener)
         self.modify = Modify(self)
         self.add(
             "issues",
@@ -205,6 +241,8 @@ class SidebarReview(Review):
         self.layout(300, 600)
         accessibility.configure(self, sidebar=True)
         layout.connect_viewport(self)
+        self.viewport_bars = {"y": ScrollValue(self)}
+        self.scrollbar.getPeer().setProperty("AccessibleName", "Sidebar scrollbar")
         self.post(self.check)
 
     def add(self, name, kind, x, y, width, height, **props):
@@ -262,8 +300,7 @@ class SidebarReview(Review):
             ),
         )
         margin, gap = round(8 * scale), round(6 * scale)
-        bars = getattr(self, "viewport_bars", {})
-        bar_width = getattr(self, "viewport_insets", {}).get("x", round(14 * scale))
+        bar_width = round(14 * scale)
         available = max(1, width - 2 * margin - bar_width)
 
         def required(name):
@@ -302,9 +339,7 @@ class SidebarReview(Review):
         if measure:
             return minimum_height, preferred_height
         self.minimum_height, self.preferred_height = minimum_height, preferred_height
-        scroll = {axis: bar.getCurrentValue() for axis, bar in bars.items()}
-        for bar in bars.values():
-            bar.setCurrentValue(0)
+        scroll = self.scroll_position
         height = height if height is not None else self.dialog.getPosSize().Height
         content_height = max(self.minimum_height, height)
         rows = header + [(["message"], content_height - fixed)] + footer
@@ -315,16 +350,26 @@ class SidebarReview(Review):
             x = margin
             for i, name in enumerate(names):
                 w = available if len(names) == 1 else minima[i] + spare // len(names)
-                self.dialog.getControl(name).setPosSize(x, y, w, h, 15)
+                self.positions[name] = (x, y, w, h)
                 x += w + gap
             y += h + gap
-        logical = self.dialog.getPeer().convertSizeToLogic(
-            uno.createUnoStruct("com.sun.star.awt.Size", width, content_height),
-            uno.getConstantByName("com.sun.star.util.MeasureUnit.APPFONT"),
-        )
-        self.dialog.getModel().ScrollHeight = logical.Height
-        for axis, value in scroll.items():
-            bars[axis].setCurrentValue(min(value, bars[axis].getMaximumValue()))
+        self.content_height = content_height
+        self.viewport_insets = {"x": bar_width, "y": 0}
+        self.scrollbar.setPosSize(width - bar_width, 0, bar_width, height, 15)
+        model = self.scrollbar.getModel()
+        model.ScrollValueMax, model.VisibleSize = content_height, height
+        model.LineIncrement, model.BlockIncrement = row, max(row, height - row)
+        self.scrollbar.setVisible(True)
+        self.scroll_to(scroll, force=True)
+
+    def scroll_to(self, value, force=False):
+        value = max(0, min(round(value), self.content_height - self.dialog.getPosSize().Height))
+        if not force and value == self.scroll_position:
+            return
+        self.scroll_position = value
+        for name, (x, y, width, height) in self.positions.items():
+            self.dialog.getControl(name).setPosSize(x, y - value, width, height, 15)
+        self.scrollbar.setValue(value)
 
     def details(self):
         super().details()

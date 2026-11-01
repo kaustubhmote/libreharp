@@ -1,0 +1,95 @@
+{
+  "version": "0.5.0",
+  "validated_at": "2026-11-02",
+  "unit_tests": 32,
+  "libreoffice_checks": 135,
+  "scaling_checks": 262,
+  "atspi_checks": 28,
+  "suites": {
+    "report": 28,
+    "scopes-report": 28,
+    "extended-report": 30,
+    "complex-report": 17,
+    "accessibility-report": 32,
+    "atspi-report": 14,
+    "atspi-font200-report": 14,
+    "scaling-default-report": 43,
+    "scaling-font150-report": 43,
+    "scaling-font200-report": 43,
+    "scaling-dpi150-report": 45,
+    "scaling-dpi200-report": 45,
+    "scaling-gtk200-report": 43
+  },
+  "package_sha256": "b5599d105d535d185aef46bdc9d6903be510db127f1550efd28c8f589be283a7",
+  "package_bytes": 14662049,
+  "deterministic": true,
+  "libreoffice": "26.8",
+  "harper": "3.0.0",
+  "normal_profile_modified_by_tests": false,
+  "performance": {
+    "paragraphs": 1000,
+    "review_seconds": 15.596
+  },
+  "scaling_cases": {
+    "scaling-default-report": {
+      "SAL_USE_VCLPLUGIN": null,
+      "SAL_FORCEDPI": null,
+      "GDK_SCALE": null,
+      "GDK_DPI_SCALE": null
+    },
+    "scaling-font150-report": {
+      "SAL_USE_VCLPLUGIN": "gtk3",
+      "SAL_FORCEDPI": null,
+      "GDK_SCALE": null,
+      "GDK_DPI_SCALE": "1.5"
+    },
+    "scaling-font200-report": {
+      "SAL_USE_VCLPLUGIN": "gtk3",
+      "SAL_FORCEDPI": null,
+      "GDK_SCALE": null,
+      "GDK_DPI_SCALE": "2"
+    },
+    "scaling-dpi150-report": {
+      "SAL_USE_VCLPLUGIN": "gen",
+      "SAL_FORCEDPI": "144",
+      "GDK_SCALE": null,
+      "GDK_DPI_SCALE": null
+    },
+    "scaling-dpi200-report": {
+      "SAL_USE_VCLPLUGIN": "gen",
+      "SAL_FORCEDPI": "192",
+      "GDK_SCALE": null,
+      "GDK_DPI_SCALE": null
+    },
+    "scaling-gtk200-report": {
+      "SAL_USE_VCLPLUGIN": "gtk3",
+      "SAL_FORCEDPI": null,
+      "GDK_SCALE": "2",
+      "GDK_DPI_SCALE": null
+    }
+  },
+  "limits": [
+    "Linux x86-64 and LibreOffice 26.8 only",
+    "Primary display work area",
+    "Fixed startup scales only",
+    "No Orca speech, braille, or high-contrast theme pass"
+  ],
+  "installation": {
+    "launcher": "/opt/software/libreoffice/bin/libreoffice",
+    "profile": "/home/kaustubh/.config/libreoffice/4/user",
+    "scope": "shared",
+    "previous_version": "0.4.0",
+    "verified_version": "0.5.0",
+    "loaded_services": [
+      "org.libreharp.Proofreader",
+      "org.libreharp.SidebarFactory",
+      "org.libreharp.ProtocolHandler"
+    ],
+    "english_grammar_services": [
+      "org.libreharp.Proofreader"
+    ],
+    "preferences_file_before": "absent",
+    "preferences_file_after": "absent",
+    "first_startup_synchronized_extensions": true
+  }
+}

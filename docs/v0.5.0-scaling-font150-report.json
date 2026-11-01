@@ -1,0 +1,216 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "Settings fits the display",
+    "Settings native outer window matches its viewport",
+    "Settings action labels fit at this scale",
+    "Settings F8 reveals Status",
+    "Returning to the first field scrolls back to the top",
+    "Tab reveals every Settings field and action",
+    "Settings remains keyboard dismissible",
+    "RuleBrowser fits the display",
+    "RuleBrowser native outer window matches its viewport",
+    "RuleBrowser action labels fit at this scale",
+    "RuleBrowser F8 reveals Status",
+    "RuleBrowser remains keyboard dismissible",
+    "ScopedSettings fits the display",
+    "ScopedSettings native outer window matches its viewport",
+    "ScopedSettings action labels fit at this scale",
+    "ScopedSettings F8 reveals Status",
+    "ScopedSettings remains keyboard dismissible",
+    "Vocabulary fits the display",
+    "Vocabulary native outer window matches its viewport",
+    "Vocabulary action labels fit at this scale",
+    "Vocabulary F8 reveals Status",
+    "Vocabulary remains keyboard dismissible",
+    "Migration fits the display",
+    "Migration native outer window matches its viewport",
+    "Migration action labels fit at this scale",
+    "Migration F8 reveals Status",
+    "Migration remains keyboard dismissible",
+    "Review fits the display",
+    "Review native outer window matches its viewport",
+    "Review action labels fit at this scale",
+    "Review F8 reveals Status",
+    "Review remains keyboard dismissible",
+    "Sidebar rows grow with native font and DPI",
+    "SidebarReview action labels fit at this scale",
+    "Sidebar controls fit its advertised minimum size",
+    "Sidebar controls do not overlap",
+    "Extra sidebar height still goes to the explanation",
+    "SidebarReview action labels fit at this scale",
+    "Narrow sidebar keeps every control within its assigned width",
+    "Short sidebar scrolls Status into view",
+    "Sidebar can return to Findings after scrolling",
+    "Native sidebar scrollbar moves the controls",
+    "Installed sidebar opens at this scale"
+  ],
+  "errors": [],
+  "case": "font150",
+  "environment": {
+    "SAL_USE_VCLPLUGIN": "gtk3",
+    "SAL_FORCEDPI": null,
+    "GDK_SCALE": null,
+    "GDK_DPI_SCALE": "1.5"
+  },
+  "dialogs": {
+    "Settings": {
+      "width": 1449,
+      "height": 1056,
+      "horizontal_scroll": true,
+      "vertical_scroll": true,
+      "display_width": 1600,
+      "display_height": 1200,
+      "native_pixels": [
+        1449,
+        1056
+      ]
+    },
+    "RuleBrowser": {
+      "width": 1449,
+      "height": 1056,
+      "horizontal_scroll": true,
+      "vertical_scroll": true,
+      "display_width": 1600,
+      "display_height": 1200,
+      "native_pixels": [
+        1449,
+        1056
+      ]
+    },
+    "ScopedSettings": {
+      "width": 1484,
+      "height": 1014,
+      "horizontal_scroll": true,
+      "vertical_scroll": true,
+      "display_width": 1600,
+      "display_height": 1200,
+      "native_pixels": [
+        1484,
+        1014
+      ]
+    },
+    "Vocabulary": {
+      "width": 1484,
+      "height": 894,
+      "horizontal_scroll": true,
+      "vertical_scroll": true,
+      "display_width": 1600,
+      "display_height": 1200,
+      "native_pixels": [
+        1484,
+        894
+      ]
+    },
+    "Migration": {
+      "width": 1449,
+      "height": 834,
+      "horizontal_scroll": true,
+      "vertical_scroll": true,
+      "display_width": 1600,
+      "display_height": 1200,
+      "native_pixels": [
+        1449,
+        834
+      ]
+    },
+    "Review": {
+      "width": 1449,
+      "height": 909,
+      "horizontal_scroll": true,
+      "vertical_scroll": true,
+      "display_width": 1600,
+      "display_height": 1200,
+      "native_pixels": [
+        1449,
+        909
+      ]
+    }
+  },
+  "sidebar": {
+    "scale": 1.5,
+    "minimum_width": 464,
+    "minimum_height": 774,
+    "controls": {
+      "issues": [
+        12,
+        12,
+        419,
+        42
+      ],
+      "previous": [
+        12,
+        63,
+        135,
+        42
+      ],
+      "next": [
+        156,
+        63,
+        97,
+        42
+      ],
+      "ignore": [
+        262,
+        63,
+        168,
+        42
+      ],
+      "message": [
+        12,
+        114,
+        419,
+        273
+      ],
+      "suggestions": [
+        12,
+        396,
+        231,
+        42
+      ],
+      "apply": [
+        252,
+        396,
+        178,
+        42
+      ],
+      "scope": [
+        12,
+        447,
+        419,
+        42
+      ],
+      "more": [
+        12,
+        498,
+        247,
+        42
+      ],
+      "run": [
+        268,
+        498,
+        163,
+        42
+      ],
+      "auto": [
+        12,
+        549,
+        249,
+        42
+      ],
+      "check": [
+        270,
+        549,
+        161,
+        42
+      ],
+      "status": [
+        12,
+        600,
+        419,
+        60
+      ]
+    }
+  },
+  "passed": true
+}

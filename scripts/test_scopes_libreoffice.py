@@ -106,6 +106,9 @@ def main():
         "This is [a] example." in window.getControl("message").getModel().Text
         and "Before: This is a example." in window.getControl("message").getModel().Text,
     )
+    # The previous scale case may have saved a small Writer window. Give this
+    # growth fixture real parent space before asking the child to use 800 px.
+    a.CurrentController.Frame.ContainerWindow.setPosSize(0, 0, 1280, 1200, 15)
     original_bounds = window.getControl("issues").getPosSize()
     panel.getRealInterface().getHeightForWidth(800)
     test.record(

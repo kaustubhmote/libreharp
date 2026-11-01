@@ -268,6 +268,8 @@ def main():
         test.record(
             "Sidebar can return to Findings after scrolling", wait_for(lambda: inside(panel, "issues"))
         )
+        panel.scrollbar.getAccessibleContext().setCurrentValue(panel.viewport_bars["y"].getMaximumValue())
+        test.record("Native sidebar scrollbar moves the controls", wait_for(lambda: inside(panel, "status")))
         panel.close()
         frame = doc.CurrentController.Frame
         doc.CurrentController.ViewSettings.ZoomValue = 100

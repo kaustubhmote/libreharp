@@ -44,7 +44,7 @@ Permanent rule suppression must survive a new process. Dictionary changes must i
 
 1. Expand the eight rule-specific explanations to more of Harper's 936 rules. Keep examples tested against the pinned engine.
 2. Test overlapping tracked changes, more field types, protected sections, and documents produced by other Word processors. The current DOCX evidence is a LibreOffice export/reopen round trip.
-3. Complete an Orca listening pass, braille and other screen-reader testing, high-contrast/enlarged-font/high-DPI checks, translations, and performance beyond 1,000 paragraphs. Native keyboard and accessibility-tree checks and a GTK3/AT-SPI bridge probe are covered in 0.4.0.
+3. Complete an Orca listening pass, braille and other screen-reader testing, high-contrast checks, live changes between monitor scales, translations, and performance beyond 1,000 paragraphs. Native keyboard and accessibility-tree checks and a GTK3/AT-SPI bridge probe are covered. Version 0.5.0 adds fixed startup font and DPI cases.
 4. Package and test Windows/macOS engines and older LibreOffice versions with their actual runtimes. The current filesystem locking uses Linux `fcntl`.
 5. Add a release/update UI after defining a trusted distribution channel. Do not silently download or execute engine updates.
 
@@ -55,14 +55,16 @@ Permanent rule suppression must survive a new process. Dictionary changes must i
 - [x] Readable status fields, accessible text-change events, F8 status access, and validation-error focus.
 - [x] Keyboard exit from dialogs/sidebar, child-dialog focus return, and no focus stealing during rechecks.
 - [x] Native keyboard regressions and an independent GTK3/AT-SPI bridge probe.
-- [ ] Spoken feedback and braille validation, theme/font/scaling matrix, and other operating systems.
+- [ ] Spoken feedback and braille validation, high-contrast themes, and other operating systems. Fixed font/scaling cases are covered below.
 
-Version 0.4.0 remains a development release. Completed items have automated or recorded visual evidence; the remaining compatibility work is not implied by a passing Linux test suite.
+LibreHarp remains a development release. Completed items have automated or recorded visual evidence; the remaining compatibility work is not implied by a passing Linux test suite.
 
 ## Version 0.5.0 font and display scaling work
 
-- [ ] Measure native controls at normal, enlarged-font, and high-DPI settings in isolated LibreOffice sessions.
-- [ ] Size sidebar rows and minimum dimensions from native font/control metrics, retaining room for explanations.
-- [ ] Keep large dialogs within the display and make overflow reachable by mouse and keyboard.
-- [ ] Add scaling regressions and inspect screenshots at the tested sizes.
-- [ ] Run regression suites, build a reproducible package, commit the release, and upgrade the usual LibreOffice installation.
+- [x] Measure native controls at normal, enlarged-font, and high-DPI settings in isolated LibreOffice sessions.
+- [x] Size sidebar rows and content dimensions from native font/control metrics, retaining room for explanations. Wrap actions to fit the actual panel width.
+- [x] Keep large dialogs within the display and make overflow reachable by mouse and keyboard.
+- [x] Add scaling regressions and inspect screenshots at the tested sizes.
+- [x] Run regression suites, build a reproducible package, commit the release, and upgrade the usual LibreOffice installation.
+
+Automated regression suites use an isolated profile. The authorized shared installation upgrade was verified with the regular profile; its grammar-service selection and preference-file state were preserved. Versioned validation reports are retained under `docs/`; the generated OXT and isolated test files remain ignored by Git.
