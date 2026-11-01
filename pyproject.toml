@@ -1,0 +1,25 @@
+[project]
+name = "libreharp"
+version = "0.2.0"
+description = "Private, customizable Harper proofreading for LibreOffice Writer"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = ["pytest>=8,<9", "ruff>=0.9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+extend-exclude = ["test-zone", "build", "vendor"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+ignore = ["E402"]

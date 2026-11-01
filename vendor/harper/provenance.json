@@ -1,0 +1,8 @@
+{
+  "version": "3.0.0",
+  "source": "https://github.com/Automattic/harper/releases/tag/v3.0.0",
+  "asset": "harper-ls-x86_64-unknown-linux-gnu.tar.gz",
+  "archive_sha256": "17fd8dfea277ee9d1fc536a1baf596c6acb7172ea79f77dcd8ee2400f55a88a3",
+  "binary_sha256": "53b9fb666799c1bee8e31817631aab690b446197111f16a9f170318767537ed2",
+  "license": "Apache-2.0"
+}

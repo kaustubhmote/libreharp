@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oor:component-data oor:name="Addons" oor:package="org.openoffice.Office" xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <node oor:name="AddonUI"><node oor:name="OfficeMenuBar">
+    <node oor:name="org.libreharp.Menu" oor:op="replace">
+      <prop oor:name="Title" oor:type="xs:string"><value xml:lang="en-US">LibreHarp</value></prop>
+      <node oor:name="Submenu">
+        <node oor:name="migrate" oor:op="replace">
+          <prop oor:name="Title"><value xml:lang="en-US">Import from LibreHarper…</value></prop>
+          <prop oor:name="URL"><value>org.libreharp:migrate</value></prop>
+          <prop oor:name="Target"><value>_self</value></prop>
+          <prop oor:name="Context"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
+        <node oor:name="sidebar" oor:op="replace">
+          <prop oor:name="Title"><value xml:lang="en-US">Open sidebar</value></prop>
+          <prop oor:name="URL"><value>org.libreharp:sidebar</value></prop>
+          <prop oor:name="Target"><value>_self</value></prop>
+          <prop oor:name="Context"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
+        <node oor:name="scopes" oor:op="replace">
+          <prop oor:name="Title"><value xml:lang="en-US">Document and project settings…</value></prop>
+          <prop oor:name="URL"><value>org.libreharp:scopes</value></prop>
+          <prop oor:name="Target"><value>_self</value></prop>
+          <prop oor:name="Context"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
+        <node oor:name="vocabulary" oor:op="replace">
+          <prop oor:name="Title"><value xml:lang="en-US">Personal words and terminology…</value></prop>
+          <prop oor:name="URL"><value>org.libreharp:vocabulary</value></prop>
+          <prop oor:name="Target"><value>_self</value></prop>
+          <prop oor:name="Context"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
+        <node oor:name="rules" oor:op="replace">
+          <prop oor:name="Title" oor:type="xs:string"><value xml:lang="en-US">Grammar rules…</value></prop>
+          <prop oor:name="URL" oor:type="xs:string"><value>org.libreharp:rules</value></prop>
+          <prop oor:name="Target" oor:type="xs:string"><value>_self</value></prop>
+          <prop oor:name="Context" oor:type="xs:string"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
+        <node oor:name="review" oor:op="replace">
+          <prop oor:name="Title" oor:type="xs:string"><value xml:lang="en-US">Review document…</value></prop>
+          <prop oor:name="URL" oor:type="xs:string"><value>org.libreharp:review</value></prop>
+          <prop oor:name="Target" oor:type="xs:string"><value>_self</value></prop>
+          <prop oor:name="Context" oor:type="xs:string"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
+        <node oor:name="settings" oor:op="replace">
+          <prop oor:name="Title" oor:type="xs:string"><value xml:lang="en-US">Settings…</value></prop>
+          <prop oor:name="URL" oor:type="xs:string"><value>org.libreharp:settings</value></prop>
+          <prop oor:name="Target" oor:type="xs:string"><value>_self</value></prop>
+          <prop oor:name="Context" oor:type="xs:string"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
+      </node>
+    </node>
+  </node></node>
+</oor:component-data>

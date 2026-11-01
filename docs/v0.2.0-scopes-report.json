@@ -1,0 +1,26 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "Initial documents all use baseline grammar",
+    "Writer assigns distinct identities to identical text",
+    "Installed inline checker uses embedded document override",
+    "Document override does not leak to identical sibling",
+    "Project settings affect a second document in that folder",
+    "Project settings do not affect files outside the project",
+    "Document rule overrides project rule",
+    "Sibling retains project suppression",
+    "Installed sidebar factory is registered",
+    "Installed sidebar completes scoped review",
+    "Sidebar contains native scope and editing controls",
+    "Sidebar reports its actual document frame",
+    "Installed sidebar Apply button edits its own document",
+    "Sidebar Apply leaves other documents untouched",
+    "Installed sidebar edit is undoable",
+    "Document settings survive ODT close and reopen",
+    "Reopened document rebinds to inline checker",
+    "Save As outside project drops old project settings",
+    "Document and project scopes survive LibreOffice restart"
+  ],
+  "errors": [],
+  "passed": true
+}

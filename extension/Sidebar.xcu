@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oor:component-data oor:name="Sidebar" oor:package="org.openoffice.Office.UI" xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+ <node oor:name="Content">
+  <node oor:name="DeckList"><node oor:name="LibreHarpDeck" oor:op="replace">
+   <prop oor:name="Title"><value xml:lang="en-US">LibreHarp</value></prop>
+   <prop oor:name="Id"><value>LibreHarpDeck</value></prop>
+   <prop oor:name="IconURL"><value>private:graphicrepository/cmd/sc_spellingandgrammardialog.png</value></prop>
+   <prop oor:name="OrderIndex"><value>700</value></prop>
+   <prop oor:name="ContextList"><value oor:separator=";">com.sun.star.text.TextDocument, any, visible</value></prop>
+  </node></node>
+  <node oor:name="PanelList"><node oor:name="LibreHarpPanel" oor:op="replace">
+   <prop oor:name="Title"><value xml:lang="en-US">Grammar review</value></prop>
+   <prop oor:name="Id"><value>LibreHarpPanel</value></prop>
+   <prop oor:name="DeckId"><value>LibreHarpDeck</value></prop>
+   <prop oor:name="ImplementationURL"><value>private:resource/toolpanel/LibreHarpPanel</value></prop>
+   <prop oor:name="ContextList"><value oor:separator=";">com.sun.star.text.TextDocument, any, visible</value></prop>
+   <prop oor:name="OrderIndex"><value>100</value></prop>
+   <prop oor:name="WantsAWT"><value>true</value></prop>
+   <prop oor:name="ShowForReadOnlyDocument"><value>true</value></prop>
+  </node></node>
+ </node>
+</oor:component-data>

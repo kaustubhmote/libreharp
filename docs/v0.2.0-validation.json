@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "unit_tests": 29,
+  "libreoffice_checks": 77,
+  "suites": {
+    "report": 28,
+    "scopes-report": 19,
+    "extended-report": 30
+  },
+  "package_sha256": "21873bf66765412f2be81b9b387aafd8064a672ea86a3337e3c50d7d75a3efa2",
+  "package_bytes": 14650470,
+  "deterministic": true,
+  "libreoffice": "26.8",
+  "harper": "3.0.0",
+  "normal_profile_modified": false,
+  "visible_sidebar_activation": true,
+  "visible_windows": [
+    "sidebar-writer.png",
+    "scoped-settings.png",
+    "vocabulary-editor.png"
+  ]
+}
