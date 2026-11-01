@@ -1,0 +1,28 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "Field contents are excluded from English review runs",
+    "Review finds prose errors on both sides of a field",
+    "Replacement after a field uses the correct native range",
+    "Undo preserves field content and paragraph text",
+    "Direct replacement cannot overwrite a field",
+    "Review checks the merged table cell once",
+    "Replacement in the merged cell preserves table structure",
+    "Undo restores the merged cell",
+    "Review checks the nested table cell once",
+    "Replacement in the nested cell preserves table structure",
+    "Undo restores the nested cell",
+    "DOCX round trip preserves all embedded scope settings",
+    "Reopened DOCX applies its saved rule suppression",
+    "Replacement adds tracking without accepting existing redlines",
+    "Undo retains the pre-existing tracked changes",
+    "Large-document fixture contains 1000 actual Writer paragraphs",
+    "Review completes 1000 distinct paragraphs"
+  ],
+  "errors": [],
+  "measurements": {
+    "paragraphs": 1000,
+    "review_seconds": 15.31
+  },
+  "passed": true
+}

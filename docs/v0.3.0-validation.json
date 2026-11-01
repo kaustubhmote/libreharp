@@ -1,0 +1,29 @@
+{
+  "version": "0.3.0",
+  "unit_tests": 32,
+  "libreoffice_checks": 101,
+  "suites": {
+    "report": 28,
+    "scopes-report": 26,
+    "extended-report": 30,
+    "complex-report": 17
+  },
+  "package_sha256": "7474d747e20bde4aa772b6208078930e7dc40968af2b2b934f251eb61ad49546",
+  "package_bytes": 14653730,
+  "deterministic": true,
+  "libreoffice": "26.8",
+  "harper": "3.0.0",
+  "normal_profile_modified": false,
+  "visible_sidebar_activation": true,
+  "visible_windows": [
+    "sidebar-writer.png",
+    "sidebar-compact.png",
+    "rule-browser.png",
+    "scoped-settings.png",
+    "vocabulary-editor.png"
+  ],
+  "performance": {
+    "paragraphs": 1000,
+    "review_seconds": 15.31
+  }
+}

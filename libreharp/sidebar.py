@@ -8,6 +8,7 @@ from com.sun.star.awt import XWindowListener
 from com.sun.star.lang import XComponent, XServiceInfo
 from com.sun.star.ui import XSidebarPanel, XToolPanel, XUIElement, XUIElementFactory
 
+from .rule_help import finding_text
 from .scopes import ScopeTarget
 from .uno_app import Action, Callback, Modify, Review, RuleBrowser, Selection, runtime, service
 
@@ -57,7 +58,7 @@ class Resize(unohelper.Base, XWindowListener):
         self.owner = owner
 
     def windowResized(self, event):
-        self.owner.layout(event.Width)
+        self.owner.layout(event.Width, event.Height)
 
     def windowMoved(self, event):
         pass
@@ -86,53 +87,95 @@ class SidebarReview(Review):
         self.geometry = {}
         self.modify = Modify(self)
         self.add(
-            "heading",
-            "FixedText",
+            "issues",
+            "ListBox",
             8,
             8,
             284,
-            32,
-            Label="Save to keep document choices.",
+            28,
+            Dropdown=True,
+            LineCount=12,
+            MultiSelection=False,
+            HelpText="Findings in this document",
         )
+        self.selection = Selection(self, self.details)
+        self.dialog.getControl("issues").addItemListener(self.selection)
+        self.button("previous", "~Previous", 8, 42, 90, lambda: self.move(-1))
+        self.button("next", "~Next", 104, 42, 90, lambda: self.move(1))
+        self.button("ignore", "~Ignore once", 200, 42, 92, self.ignore)
+        self.add(
+            "message",
+            "Edit",
+            8,
+            74,
+            284,
+            342,
+            MultiLine=True,
+            ReadOnly=True,
+            VScroll=True,
+            HelpText="Selected finding, context, explanation, and example",
+        )
+        self.add(
+            "suggestions",
+            "ListBox",
+            8,
+            422,
+            204,
+            28,
+            Dropdown=True,
+            LineCount=8,
+            HelpText="Suggested replacement",
+        )
+        self.button("apply", "~Apply", 218, 422, 74, self.apply)
         self.add(
             "scope",
             "ListBox",
             8,
-            44,
+            456,
             284,
-            28,
+            26,
             Dropdown=True,
             StringItemList=("Remember for this document", "Remember for this project", "Remember everywhere"),
             SelectedItems=(0,),
+            HelpText="Scope for Disable rule and Remember word. Save the document to retain document choices.",
         )
-        self.add("issues", "ListBox", 8, 80, 284, 130, Dropdown=False, MultiSelection=False)
-        self.selection = Selection(self, self.details)
-        self.dialog.getControl("issues").addItemListener(self.selection)
-        self.add("message", "Edit", 8, 218, 284, 70, MultiLine=True, ReadOnly=True, VScroll=True)
-        self.add("suggestions", "ListBox", 8, 296, 284, 52, Dropdown=False)
-        self.button("previous", "Previous", 8, 356, 84, lambda: self.move(-1))
-        self.button("next", "Next", 100, 356, 84, lambda: self.move(1))
-        self.button("apply", "Apply", 192, 356, 100, self.apply)
-        self.button("ignore", "Ignore once", 8, 392, 138, self.ignore)
-        self.button("locate", "Show in document", 154, 392, 138, self.locate)
-        self.button("disable", "Disable rule", 8, 428, 138, self.disable)
-        self.button("word", "Remember word", 154, 428, 138, self.word)
-        self.button("rules", "Grammar rules", 8, 464, 138, self.browse_rules)
-        self.button("settings", "Document / project", 154, 464, 138, self.settings)
-        self.button("vocabulary", "Words and terminology", 8, 500, 284, self.vocabulary)
-        self.add("auto", "CheckBox", 8, 536, 284, 24, Label="Recheck after edits", State=1)
-        self.button("check", "Check document", 8, 568, 284, self.check)
-        self.add("status", "FixedText", 8, 604, 284, 60, Label="Ready")
+        self.add(
+            "more",
+            "ListBox",
+            8,
+            488,
+            204,
+            28,
+            Dropdown=True,
+            LineCount=7,
+            StringItemList=(
+                "More actions...",
+                "Show in document",
+                "Disable rule",
+                "Remember word",
+                "Grammar rules",
+                "Document / project settings",
+                "Words and terminology",
+            ),
+            SelectedItems=(0,),
+            HelpText="Choose an action, then press Go",
+        )
+        self.button("run", "~Go", 218, 488, 74, self.run_action)
+        self.add("auto", "CheckBox", 8, 522, 194, 24, Label="Recheck after ~edits", State=1)
+        self.button("check", "~Check", 208, 522, 84, self.check)
+        self.add("status", "FixedText", 8, 552, 284, 40, Label="Ready", MultiLine=True)
         self.resize = Resize(self)
         self.dialog.addWindowListener(self.resize)
         document.addModifyListener(self.modify)
         self.dialog.setVisible(True)
         app.windows.append(self)
-        self.layout(300)
+        self.layout(300, 600)
         self.post(self.check)
 
     def add(self, name, kind, x, y, width, height, **props):
         model = service(self.ctx, "awt.UnoControl" + kind + "Model")
+        if model.getPropertySetInfo().hasPropertyByName("TabIndex"):
+            model.TabIndex = len(self.model.controls)
         for key, value in props.items():
             setattr(model, key, value)
         control = service(self.ctx, "awt.UnoControl" + kind)
@@ -150,12 +193,52 @@ class SidebarReview(Review):
         self.actions.append(action)
         self.dialog.getControl(name).addActionListener(action)
 
-    def layout(self, width):
+    def layout(self, width, height=None):
         if self.closed:
             return
+        height = max(440, height if height is not None else self.dialog.getPosSize().Height)
+        message_height = height - 258
         scale = max(300, width) / 300
         for name, (x, y, w, h) in self.geometry.items():
+            if name == "message":
+                h = message_height
+            elif y >= 422:
+                y += message_height - 342
             self.dialog.getControl(name).setPosSize(round(x * scale), y, round(w * scale), h, 15)
+
+    def details(self):
+        super().details()
+        index, (_, original, issue) = self.selected()
+        self.model.getByName("message").Text = finding_text(original, issue, index + 1, len(self.rows))
+        self.model.getByName("apply").Enabled = bool(issue["suggestions"])
+        self.model.getByName("previous").Enabled = index > 0
+        self.model.getByName("next").Enabled = index + 1 < len(self.rows)
+
+    def display(self):
+        index = self.dialog.getControl("issues").getSelectedItemPos()
+        super().display()
+        if self.rows:
+            self.dialog.getControl("issues").selectItemPos(max(0, min(index, len(self.rows) - 1)), True)
+            self.details()
+            self.model.getByName("ignore").Enabled = True
+        else:
+            self.model.getByName("message").Text = "No findings to display. Use Check to review the document."
+            self.model.getByName("apply").Enabled = False
+            for name in ("previous", "next", "ignore"):
+                self.model.getByName(name).Enabled = False
+
+    def run_action(self):
+        index = self.dialog.getControl("more").getSelectedItemPos()
+        actions = (self.locate, self.disable, self.word, self.browse_rules, self.settings, self.vocabulary)
+        if index > 0:
+            actions[index - 1]()
+            self.dialog.getControl("more").selectItemPos(0, True)
+
+    def ignore(self):
+        index, _ = self.selected()
+        self.rows.pop(index)
+        self.display()
+        self.status("Ignored until the next check. More actions > Disable rule saves a lasting choice.")
 
     def target(self):
         scope = self.dialog.getControl("scope").getSelectedItemPos()
@@ -233,7 +316,7 @@ class Panel(unohelper.Base, XUIElement, XToolPanel, XSidebarPanel, XComponent):
     def getHeightForWidth(self, width):
         self.review.layout(width)
         result = uno.createUnoStruct("com.sun.star.ui.LayoutSize")
-        result.Minimum, result.Preferred, result.Maximum = 672, 672, -1
+        result.Minimum, result.Preferred, result.Maximum = 440, 600, -1
         return result
 
     def getMinimalWidth(self):

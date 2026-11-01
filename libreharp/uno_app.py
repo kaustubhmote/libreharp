@@ -15,6 +15,7 @@ from com.sun.star.util import XModifyListener
 from .catalog import load_catalog
 from .checker import Checker, replacement_is_current
 from .engine import Engine
+from .rule_help import explanation
 from .store import Store, fingerprint
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -337,29 +338,40 @@ def paragraphs(document):
                         yield from walk(text)
 
 
-def language_runs(paragraph):
-    """Snapshot contiguous English text portions with offsets into the full paragraph."""
+def mapped_portions(paragraph):
+    """Keep display offsets and native ranges together; refuse ambiguous representations."""
     enum = paragraph.createEnumeration()
-    parts = []
-    offset = 0
-    combined = ""
+    result, combined = [], ""
     while enum.hasMoreElements():
         portion = enum.nextElement()
         text = portion.String
+        result.append((len(combined), len(combined) + len(text), portion))
         combined += text
-        if text:
+    return result if combined == paragraph.String else None
+
+
+def language_runs(paragraph):
+    """Snapshot English plain text; fields are boundaries, never editable prose."""
+    portions = mapped_portions(paragraph)
+    if portions is None:
+        return []
+    parts = []
+    boundary = True
+    for begin, end, portion in portions:
+        if portion.TextPortionType != "Text":
+            boundary = True
+            continue
+        if end > begin:
             locale = portion.CharLocale
             if locale.Language == "en":
                 country = locale.Country or "US"
-                if parts and parts[-1][1] == offset and parts[-1][2] == country:
-                    parts[-1] = (parts[-1][0], offset + len(text), country)
+                if not boundary and parts and parts[-1][1] == begin and parts[-1][2] == country:
+                    parts[-1] = (parts[-1][0], end, country)
                 else:
-                    parts.append((offset, offset + len(text), country))
-        offset += len(text)
-    if combined != paragraph.String:
-        # A field or other complex portion has an incompatible text representation.
-        # Do not guess its offset and risk replacing an adjacent character.
-        return []
+                    parts.append((begin, end, country))
+                boundary = False
+            else:
+                boundary = True
     return parts
 
 
@@ -368,21 +380,33 @@ def apply_replacement(document, paragraph, original, issue, replacement):
         raise ValueError("This paragraph changed. Check again before applying this suggestion.")
     if document.isReadonly():
         raise ValueError("This document is read-only.")
-    cursor = paragraph.Text.createTextCursorByRange(paragraph.Start)
-    # Writer cursor movement counts Unicode characters, unlike proofreading offsets
-    # which use UTF-16 units. The final selected-text check guards complex ranges.
-    remaining = len(original[: issue["start"]])
-    while remaining:
-        step = min(remaining, 32767)
-        if not cursor.goRight(step, False):
-            raise ValueError("Could not locate the suggestion.")
-        remaining -= step
-    remaining = len(issue["text"])
-    while remaining:
-        step = min(remaining, 32767)
-        if not cursor.goRight(step, True):
-            raise ValueError("Could not select the suggestion.")
-        remaining -= step
+    portions = mapped_portions(paragraph)
+    if portions is None:
+        raise ValueError("This paragraph contains unsupported fields. No replacement was made.")
+    touched = [
+        (begin, end, p)
+        for begin, end, p in portions
+        if max(begin, issue["start"]) < min(end, issue["end"])
+        or (begin == end and issue["start"] < begin < issue["end"] and p.TextPortionType == "TextField")
+    ]
+    if not touched or any(p.TextPortionType != "Text" for _, _, p in touched):
+        raise ValueError("The suggestion crosses a field or has no editable text. No replacement was made.")
+
+    def endpoint(entry, offset):
+        begin, _, portion = entry
+        point = paragraph.Text.createTextCursorByRange(portion.Start)
+        remaining = offset - begin
+        while remaining:
+            step = min(remaining, 32767)
+            if not point.goRight(step, False):
+                raise ValueError("Could not locate the suggestion.")
+            remaining -= step
+        return point
+
+    # Fields may occupy one cursor position but display many characters. Start from
+    # the actual text portion, not a paragraph-wide character count.
+    cursor = endpoint(touched[0], issue["start"])
+    cursor.gotoRange(endpoint(touched[-1], issue["end"]), True)
     # Confirm the range, including fields/non-BMP characters, before touching it.
     if cursor.String != issue["text"]:
         raise ValueError("The text range does not match. No replacement was made.")
@@ -790,7 +814,7 @@ class RuleBrowser(Window):
     """Searchable native rule controls; persisted choices apply immediately."""
 
     def __init__(self, app, document=None, initial_scope=None):
-        super().__init__(app, "LibreHarp — grammar rules", 420, 310)
+        super().__init__(app, "LibreHarp — grammar rules", 420, 350)
         self.document = document
         self.catalog = load_catalog()
         self.visible_rules = []
@@ -808,21 +832,21 @@ class RuleBrowser(Window):
             + (("This document", "Project (document folder if new)") if document else ()),
             SelectedItems=((initial_scope if initial_scope is not None else 2 if document else 0),),
         )
-        self.add("rules", "ListBox", 8, 52, 404, 130, Dropdown=False, MultiSelection=False)
+        self.add("rules", "ListBox", 8, 52, 404, 100, Dropdown=False, MultiSelection=False)
         self.selection = Selection(self, self.details)
         self.dialog.getControl("rules").addItemListener(self.selection)
-        self.add("detail", "Edit", 8, 188, 404, 52, MultiLine=True, ReadOnly=True, VScroll=True)
-        self.button("enable", "Enable", 8, 246, 80, lambda: self.set(True))
-        self.button("disable", "Disable", 94, 246, 80, lambda: self.set(False))
-        self.button("reset", "Use inherited default", 180, 246, 140, lambda: self.set(None))
-        self.button("close", "Close", 330, 246, 82, self.close)
+        self.add("detail", "Edit", 8, 158, 404, 132, MultiLine=True, ReadOnly=True, VScroll=True)
+        self.button("enable", "Enable", 8, 296, 80, lambda: self.set(True))
+        self.button("disable", "Disable", 94, 296, 80, lambda: self.set(False))
+        self.button("reset", "Use inherited default", 180, 296, 140, lambda: self.set(None))
+        self.button("close", "Close", 330, 296, 82, self.close)
         self.add(
             "status",
             "FixedText",
             8,
-            270,
+            320,
             404,
-            32,
+            24,
             Label="Choose a scope, then enable, disable, or restore an inherited default.",
         )
         self.refresh()
@@ -883,6 +907,8 @@ class RuleBrowser(Window):
         self.model.getByName(
             "detail"
         ).Text = f"{rule['name']}: {'enabled' if state else 'disabled'} ({origin}).\n{rule['description']}\nHarper default: {'enabled' if rule['default'] else 'disabled'}."
+        if explanation(rule["name"]):
+            self.model.getByName("detail").Text += "\n\n" + explanation(rule["name"])
 
     def set(self, enabled):
         rule = self.selected()

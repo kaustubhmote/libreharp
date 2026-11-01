@@ -63,3 +63,22 @@ Validation reports and final counts are retained in the versioned report files u
 - Verified all 27 OXT payload files and deterministic rebuilds. The final digest is recorded beside the package and in `docs/v0.2.0-validation.json`.
 - Final visible testing caught two sidebar startup details: the deck list can arrive after menu dispatch, and activating a deck does not expand a collapsed sidebar. Opening now waits through UI callbacks and explicitly expands the deck. The installed menu action passed its activation assertion, and the final screenshot shows populated review controls.
 - Test runs compare component errors against their starting log, so retained historical diagnostics remain available while newly logged exceptions fail the run. Re-ran all 28 baseline checks and the visible sidebar/editor checks after the startup fix.
+
+## 2026-11-01 — version 0.3.0 continuation
+
+- Replaced the tall sidebar findings list with a dropdown. The explanation now receives extra panel height, while navigation, replacement, and secondary actions occupy compact rows. At the tested minimum height, the explanation is 182 pixels instead of 70. The visible 920-pixel Writer window gives it roughly 490 pixels.
+- Added full flagged text, surrounding context, position within the finding list, and examples for eight common rules. Verified that each example triggers its named rule and its corrected version does not. Harper deliberately skips some short capitalization examples; adjusted the help and fixtures to match the pinned implementation.
+- Kept the nearest finding selected after a refresh or ignore. Disabled unavailable navigation and Apply actions. Added keyboard mnemonics, explicit tab order, and control help text. These are usability improvements, not a completed accessibility audit.
+- Enlarged the rule browser explanation area and included the same rule examples there.
+- Field testing exposed that displayed field text can look like ordinary text. Review now excludes field contents. Replacements resolve actual text-portion ranges, which permits edits after a multi-character field without relying on paragraph-wide cursor counts. Direct field overwrites are rejected.
+- Added real Writer tests for input fields, merged/nested tables, DOCX scope metadata, and edits alongside existing redlines. Undo can recreate field objects; tests reacquire the field and verify its retained content.
+- Corrected a test-fixture assumption: assigning newline-separated text through UNO can create line breaks within a paragraph. The old 100-line test is now named accurately. The new 1,000-paragraph fixture inserts explicit paragraph breaks and asserts the paragraph count before measuring review.
+- The 1,000-paragraph review completed in 15.310 seconds on this machine. This measurement includes the review snapshot and checking, but excludes document creation. It is not a cross-machine performance promise.
+- The regular LibreOffice profile remains untouched. Versioned validation reports are retained under `docs/`; the generated OXT and isolated test files remain ignored by Git.
+
+### Version 0.3.0 validation
+
+- 32 unit/engine tests and 101 actual LibreOffice checks passed: 28 baseline, 26 sidebar/scope, 30 extended, and 17 complex-document checks.
+- Native accessibility actions exercised the relocated scope action, navigation boundaries, selection after ignore, and Apply/Undo. Tests wait for asynchronous actions before reading the resulting UI state.
+- Inspected the expanded sidebar and rule-browser explanation areas. Captured the sidebar at both standard and smaller Writer window sizes.
+- Verified the 28-file OXT payload and a deterministic rebuild. The release checksum and suite counts are saved in `docs/v0.3.0-validation.json`.

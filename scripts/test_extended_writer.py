@@ -201,7 +201,7 @@ def test_editors(ctx, app, locale, other):
     review = Review(app, large)
     wait_review(review)
     test.record(
-        "Review completes a 100-paragraph document", sum(i["rule"] == "AnA" for _, _, i in review.rows) == 100
+        "Review completes a 100-line document", sum(i["rule"] == "AnA" for _, _, i in review.rows) == 100
     )
     large.Text.String = "The latest version is a example."
     deadline = time.monotonic() + 15

@@ -96,6 +96,25 @@ def main():
         window.getControl("scope") is not None and window.getControl("apply") is not None,
     )
     test.record("Sidebar reports its actual document frame", panel.Frame == a.CurrentController.Frame)
+    test.record(
+        "Sidebar explanation includes context and a verified rule example",
+        "This is [a] example." in window.getControl("message").getModel().Text
+        and "Before: This is a example." in window.getControl("message").getModel().Text,
+    )
+    window.setPosSize(0, 0, 300, 440, 15)
+    test.record(
+        "Compact sidebar fits its minimum height",
+        wait_for(lambda: window.getControl("status").getPosSize().Y < 440)
+        and window.getControl("status").getPosSize().Y + window.getControl("status").getPosSize().Height
+        <= 440,
+    )
+    short_height = window.getControl("message").getPosSize().Height
+    window.setPosSize(0, 0, 420, 800, 15)
+    test.record(
+        "Additional sidebar height goes to the explanation",
+        wait_for(lambda: window.getControl("message").getPosSize().Height >= short_height + 350)
+        and window.getControl("more").getPosSize().Height == 28,
+    )
     window.getControl("apply").getAccessibleContext().doAccessibleAction(0)
     test.record(
         "Installed sidebar Apply button edits its own document",
@@ -107,6 +126,49 @@ def main():
     )
     a.getUndoManager().undo()
     test.record("Installed sidebar edit is undoable", a.Text.String == "This is a example.")
+    window.getControl("check").getAccessibleContext().doAccessibleAction(0)
+    assert wait_for(lambda: bool(window.getControl("issues").getModel().StringItemList))
+    window.getControl("more").selectItemPos(2, True)
+    window.getControl("run").getAccessibleContext().doAccessibleAction(0)
+    test.record(
+        "Compact action menu disables the rule in the selected document scope",
+        wait_for(lambda: read_document(a)["rules"].get("AnA") is False) and has_rule(c),
+    )
+    test.record(
+        "Empty sidebar disables Apply and explains its state",
+        wait_for(lambda: not window.getControl("apply").getModel().Enabled)
+        and "No findings" in window.getControl("message").getModel().Text,
+    )
+    write_document(a, {**empty_scope(), "rules": {"AnA": True}})
+    a.store()
+    window.getControl("auto").getModel().State = 0
+    a.Text.String = "This is a example. That is a example. Here is a example."
+    window.getControl("check").getAccessibleContext().doAccessibleAction(0)
+    assert wait_for(lambda: len(window.getControl("issues").getModel().StringItemList) == 3)
+    window.getControl("next").getAccessibleContext().doAccessibleAction(0)
+    assert wait_for(lambda: "Finding 2 of 3" in window.getControl("message").getModel().Text)
+    window.getControl("next").getAccessibleContext().doAccessibleAction(0)
+    test.record(
+        "Navigation shows the selected finding and disables Next at the end",
+        wait_for(
+            lambda: (
+                "Finding 3 of 3" in window.getControl("message").getModel().Text
+                and not window.getControl("next").getModel().Enabled
+            )
+        ),
+    )
+    window.getControl("ignore").getAccessibleContext().doAccessibleAction(0)
+    test.record(
+        "Ignoring the last finding retains the nearest remaining selection",
+        wait_for(
+            lambda: (
+                window.getControl("issues").getSelectedItemPos() == 1
+                and "Finding 2 of 2" in window.getControl("message").getModel().Text
+            )
+        ),
+    )
+    a.Text.String = "This is a example."
+    a.store()
     panel.dispose()
     a.close(True)
     docs.remove(a)
