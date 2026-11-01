@@ -35,6 +35,23 @@ def sidebar_width(owner, scale):
     return math.ceil(width)
 
 
+def visible_size(control, width, height):
+    """Account for a host viewport that clips its larger panel allocation."""
+    context = control.getAccessibleContext()
+    origin = context.getLocationOnScreen()
+    right, bottom = origin.X + width, origin.Y + height
+    parent = context.getAccessibleParent()
+    for _ in range(24):
+        if parent is None:
+            break
+        context = parent.getAccessibleContext()
+        point, size = context.getLocationOnScreen(), context.getSize()
+        if size.Width > 0 and size.Height > 0:
+            right, bottom = min(right, point.X + size.Width), min(bottom, point.Y + size.Height)
+        parent = context.getAccessibleParent()
+    return max(1, right - origin.X), max(1, bottom - origin.Y)
+
+
 class Refocus(unohelper.Base, XCallback):
     def __init__(self, owner, name):
         self.owner, self.name = owner, name
@@ -125,9 +142,13 @@ def prepare_dialog(owner):
     if hasattr(owner, "viewport_size"):
         return
     model = owner.model
+    model.Sizeable = True
     model.ScrollWidth, model.ScrollHeight = model.Width, model.Height + 8
     model.HScroll, model.VScroll = True, True
     owner.viewport_size = (model.Width, model.Height)
+    # GTK can retain an oversized outer frame if the first mapped dialog is
+    # larger than the display. Start small, then fit using the mapped font.
+    model.Width, model.Height = min(model.Width, 200), min(model.Height, 120)
 
 
 def fit_dialog(owner):
@@ -136,11 +157,12 @@ def fit_dialog(owner):
         return
     dialog = owner.dialog
     area = dialog.getPeer().getToolkit().getWorkArea()
-    rect = dialog.getPosSize()
-    width = min(rect.Width, math.floor(area.Width * 0.94))
-    height = min(
-        rect.Height + round(rect.Height / owner.viewport_size[1] * 8), math.floor(area.Height * 0.88)
+    desired = dialog.getPeer().convertSizeToPixel(
+        uno.createUnoStruct("com.sun.star.awt.Size", owner.viewport_size[0], owner.viewport_size[1] + 8),
+        uno.getConstantByName("com.sun.star.util.MeasureUnit.APPFONT"),
     )
+    width = min(desired.Width, math.floor(area.Width * 0.94))
+    height = min(desired.Height, math.floor(area.Height * 0.88))
     dialog.setPosSize(
         area.X + (area.Width - width) // 2, area.Y + (area.Height - height) // 2, width, height, 15
     )

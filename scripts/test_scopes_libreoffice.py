@@ -106,6 +106,12 @@ def main():
         "This is [a] example." in window.getControl("message").getModel().Text
         and "Before: This is a example." in window.getControl("message").getModel().Text,
     )
+    original_bounds = window.getControl("issues").getPosSize()
+    panel.getRealInterface().getHeightForWidth(800)
+    test.record(
+        "Sidebar measurement does not rearrange visible controls",
+        window.getControl("issues").getPosSize() == original_bounds,
+    )
     minimum_height = panel.getRealInterface().getHeightForWidth(300).Preferred
     window.setPosSize(0, 0, 300, minimum_height, 15)
     test.record(

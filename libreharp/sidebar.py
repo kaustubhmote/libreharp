@@ -71,7 +71,11 @@ class Resize(unohelper.Base, XWindowListener):
         self.owner = owner
 
     def windowResized(self, event):
-        self.owner.layout(event.Width, event.Height)
+        if not getattr(self.owner, "fitting", False):
+            # Resize events can arrive after a newer host allocation. Replaying
+            # their old dimensions can cause a resize/scroll feedback loop.
+            rect = self.owner.dialog.getPosSize()
+            self.owner.layout(rect.Width, rect.Height)
 
     def windowMoved(self, event):
         pass
@@ -235,9 +239,19 @@ class SidebarReview(Review):
         self.actions.append(action)
         self.dialog.getControl(name).addActionListener(action)
 
-    def layout(self, width, height=None):
+    def layout(self, width, height=None, measure=False):
         if self.closed:
             return
+        if not measure:
+            rect = self.dialog.getPosSize()
+            height = rect.Height if height is None else height
+            width, height = layout.visible_size(self.dialog, width, height)
+            if (rect.Width, rect.Height) != (width, height):
+                self.fitting = True
+                try:
+                    self.dialog.setPosSize(0, 0, width, height, 12)
+                finally:
+                    self.fitting = False
         scale = layout.sidebar_scale(self.dialog.getControl("check"))
         self.minimum_width = layout.sidebar_width(self, scale)
         row = max(
@@ -249,9 +263,6 @@ class SidebarReview(Review):
         )
         margin, gap = round(8 * scale), round(6 * scale)
         bars = getattr(self, "viewport_bars", {})
-        scroll = {axis: bar.getCurrentValue() for axis, bar in bars.items()}
-        for bar in bars.values():
-            bar.setCurrentValue(0)
         bar_width = getattr(self, "viewport_insets", {}).get("x", round(14 * scale))
         available = max(1, width - 2 * margin - bar_width)
 
@@ -286,8 +297,14 @@ class SidebarReview(Review):
             + [(["status"], round(40 * scale))]
         )
         fixed = 2 * margin + gap * (len(header) + len(footer)) + sum(h for _, h in header + footer)
-        self.minimum_height = fixed + round(182 * scale)
-        self.preferred_height = self.minimum_height + round(160 * scale)
+        minimum_height = fixed + round(182 * scale)
+        preferred_height = minimum_height + round(160 * scale)
+        if measure:
+            return minimum_height, preferred_height
+        self.minimum_height, self.preferred_height = minimum_height, preferred_height
+        scroll = {axis: bar.getCurrentValue() for axis, bar in bars.items()}
+        for bar in bars.values():
+            bar.setCurrentValue(0)
         height = height if height is not None else self.dialog.getPosSize().Height
         content_height = max(self.minimum_height, height)
         rows = header + [(["message"], content_height - fixed)] + footer
@@ -419,19 +436,23 @@ class Panel(unohelper.Base, XUIElement, XToolPanel, XSidebarPanel, XComponent):
         return self.review.dialog
 
     def getHeightForWidth(self, width):
-        self.review.layout(width)
+        # Writer probes hypothetical widths. Measuring must not rearrange the
+        # currently visible panel, whose assigned width may be smaller.
+        _, preferred = self.review.layout(width, measure=True)
         result = uno.createUnoStruct("com.sun.star.ui.LayoutSize")
         result.Minimum, result.Preferred, result.Maximum = (
             # The panel owns scrolling. A content-sized minimum makes Writer
             # clip the entire panel in an outer viewport that cannot reveal focus.
             0,
-            self.review.preferred_height,
+            preferred,
             -1,
         )
         return result
 
     def getMinimalWidth(self):
-        return self.review.minimum_width
+        # Generic VCL otherwise puts the panel in an outer horizontal viewport.
+        # The internal layout wraps to the actual assigned width instead.
+        return 0
 
     def addEventListener(self, listener):
         self.listeners.append(listener)

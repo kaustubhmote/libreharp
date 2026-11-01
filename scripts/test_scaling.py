@@ -62,6 +62,17 @@ def inside(window, name):
     )
 
 
+def native_size(xid):
+    values = dict(
+        line.split("=", 1)
+        for line in subprocess.check_output(
+            ["xdotool", "getwindowgeometry", "--shell", xid],
+            text=True,
+        ).splitlines()
+    )
+    return int(values["WIDTH"]), int(values["HEIGHT"])
+
+
 def check_text(window):
     failures = []
     for name in window.control_names:
@@ -78,6 +89,45 @@ def check_text(window):
         ):
             failures.append(name)
     test.record(type(window).__name__ + " action labels fit at this scale", not failures)
+
+
+def installed_visible(frame, name):
+    """Generic VCL exposes the installed panel through the Writer UNO tree."""
+    found = []
+
+    def walk(context, clip=None, depth=0):
+        if depth > 30:
+            return
+        point, size = context.getLocationOnScreen(), context.getSize()
+        bounds = (point.X, point.Y, point.X + size.Width, point.Y + size.Height)
+        visible = (
+            bounds
+            if clip is None
+            else (
+                max(clip[0], bounds[0]),
+                max(clip[1], bounds[1]),
+                min(clip[2], bounds[2]),
+                min(clip[3], bounds[3]),
+            )
+        )
+        if context.getAccessibleName() == name:
+            test.REPORT.setdefault("installed_bounds", {})[name] = {"bounds": bounds, "visible": visible}
+            has_focus = bool(
+                context.getAccessibleStateSet()
+                & uno.getConstantByName("com.sun.star.accessibility.AccessibleStateType.FOCUSED")
+            )
+            found.append(
+                bounds == visible
+                and bounds[2] > bounds[0]
+                and bounds[3] > bounds[1]
+                and (name != "Status" or has_focus)
+            )
+            return
+        for i in range(min(100, context.getAccessibleChildCount())):
+            walk(context.getAccessibleChild(i).getAccessibleContext(), visible, depth + 1)
+
+    walk(frame.ContainerWindow.getProperty("XAccessible").getAccessibleContext())
+    return bool(found) and all(found)
 
 
 def main():
@@ -117,6 +167,17 @@ def main():
                 cls.__name__ + " fits the display",
                 rect.Width <= area.Width * 0.95 and rect.Height <= area.Height * 0.9,
             )
+            factor = int(os.environ.get("GDK_SCALE", "1"))
+            test.record(
+                cls.__name__ + " native outer window matches its viewport",
+                wait_for(
+                    lambda: all(
+                        abs(actual - expected * factor) <= 4
+                        for actual, expected in zip(native_size(xid), (rect.Width, rect.Height))
+                    )
+                ),
+            )
+            test.REPORT["dialogs"][cls.__name__]["native_pixels"] = native_size(xid)
             check_text(window)
             press(window, "F8")
             test.record(
@@ -147,6 +208,7 @@ def main():
                 test.record("Tab reveals every Settings field and action", expected <= visited)
             press(window, "Escape")
             test.record(cls.__name__ + " remains keyboard dismissible", wait_for(lambda: window.closed))
+        doc.CurrentController.Frame.ContainerWindow.setPosSize(0, 0, area.Width, area.Height, 15)
         panel = SidebarReview(app, doc, doc.CurrentController.Frame.ContainerWindow)
         scale = layout.sidebar_scale(panel.dialog.getControl("check"))
         test.REPORT["sidebar"] = dict(
@@ -182,10 +244,13 @@ def main():
             ),
         )
         before = panel.dialog.getControl("message").getPosSize().Height
-        panel.layout(panel.minimum_width, panel.minimum_height + 200)
+        actual = panel.dialog.getPosSize()
+        target_height = layout.visible_size(panel.dialog, actual.Width, actual.Height + 200)[1]
+        extra = target_height - actual.Height
+        panel.layout(actual.Width, target_height)
         test.record(
             "Extra sidebar height still goes to the explanation",
-            panel.dialog.getControl("message").getPosSize().Height == before + 200,
+            extra > 0 and panel.dialog.getControl("message").getPosSize().Height == before + extra,
         )
         panel.dialog.setPosSize(0, 0, 300, 400, 15)
         panel.layout(300, 400)
@@ -206,6 +271,9 @@ def main():
         panel.close()
         frame = doc.CurrentController.Frame
         doc.CurrentController.ViewSettings.ZoomValue = 100
+        doc.CurrentController.ViewSettings.ZoomType = uno.getConstantByName(
+            "com.sun.star.view.DocumentZoomType.BY_VALUE"
+        )
         frame.ContainerWindow.setPosSize(0, 0, area.Width, area.Height, 15)
         xid = (
             subprocess.check_output(
@@ -229,8 +297,16 @@ def main():
         )
         time.sleep(1)
         capture(xid, "installed-sidebar")
+        if os.environ.get("SAL_USE_VCLPLUGIN") == "gen":
+            test.record(
+                "Installed Findings fits every ancestor viewport", installed_visible(frame, "Findings")
+            )
         subprocess.run(["xdotool", "key", "--clearmodifiers", "F8"], check=True)
         time.sleep(0.3)
+        if os.environ.get("SAL_USE_VCLPLUGIN") == "gen":
+            test.record(
+                "Installed Status fits every ancestor viewport after F8", installed_visible(frame, "Status")
+            )
         capture(xid, "installed-sidebar-status")
     finally:
         for window in list(app.windows):
