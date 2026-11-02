@@ -68,3 +68,10 @@ LibreHarp remains a development release. Completed items have automated or recor
 - [x] Run regression suites, build a reproducible package, commit the release, and upgrade the usual LibreOffice installation.
 
 Automated regression suites use an isolated profile. The authorized shared installation upgrade was verified with the regular profile; its grammar-service selection and preference-file state were preserved. Versioned validation reports are retained under `docs/`; the generated OXT and isolated test files remain ignored by Git.
+
+## Version 0.5.1 dictionary shortcut
+
+- [x] Populate More actions from the selected finding; omit dictionary actions for grammar findings and finding-specific actions when empty.
+- [x] Preselect a global dictionary action for spelling findings and expose Add globally as a one-click button, independent of the scope selector.
+- [x] Retain explicit document/project word actions and refuse stale spelling findings.
+- [x] Verify native actions, persistence, keyboard navigation, and large-font layout; package, install, and commit the patch release.

@@ -270,6 +270,16 @@ def main():
         )
         panel.scrollbar.getAccessibleContext().setCurrentValue(panel.viewport_bars["y"].getMaximumValue())
         test.record("Native sidebar scrollbar moves the controls", wait_for(lambda: inside(panel, "status")))
+        app.store.update(lambda d: d.update(words=[]))
+        doc.Text.String = "The Qzxnmrspectroprobe works."
+        panel.check()
+        test.record(
+            "Spelling action becomes a direct global dictionary button",
+            wait_for(lambda: panel.model.getByName("run").Label == "Add ~globally"),
+        )
+        check_text(panel)
+        layout.focus_control(panel, "run")
+        test.record("Global dictionary button scrolls into view", wait_for(lambda: inside(panel, "run")))
         panel.close()
         frame = doc.CurrentController.Frame
         doc.CurrentController.ViewSettings.ZoomValue = 100

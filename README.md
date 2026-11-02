@@ -2,21 +2,23 @@
 
 An independent LibreOffice Writer extension with bundled Harper, a dockable review sidebar, persistent grammar preferences, personal words, and terminology rules.
 
-Version 0.5.0 is a Linux x86-64 development release. See PLAN.md for completed milestones and remaining work, and WORK_LOG.md for decisions and test evidence.
+Version 0.5.1 is a Linux x86-64 development release. See PLAN.md for completed milestones and remaining work, and WORK_LOG.md for decisions and test evidence.
 
 ## Use
 
-Install `build/LibreHarp_v0.5.0.oxt` through LibreOffice's Extension Manager and restart LibreOffice. In Tools → Options → Languages and Locales → Writing Aids, enable LibreHarp as the English grammar checker. Deselect competing English grammar checkers if they hide its results. Hunspell spelling can remain enabled. Enable automatic spell and grammar checking for inline feedback.
+Install `build/LibreHarp_v0.5.1.oxt` through LibreOffice's Extension Manager and restart LibreOffice. In Tools → Options → Languages and Locales → Writing Aids, enable LibreHarp as the English grammar checker. Deselect competing English grammar checkers if they hide its results. Hunspell spelling can remain enabled. Enable automatic spell and grammar checking for inline feedback.
 
 Set the text language to English and choose LibreHarp → Open sidebar. Select a finding from the top dropdown, read its context and explanation, then choose a replacement and Apply. Previous and Next move through findings. The explanation grows with the panel's height. The sidebar keeps the nearest finding selected after edits and ignores. It rechecks one second after document edits while open. Replacements support Writer's Undo and track-changes mode. The separate Review document window remains available.
 
-Use More actions and Go to locate the text, disable its rule, remember a word, browse rules, or open settings and vocabulary. Eight common rules include original explanations and before/after examples checked against bundled Harper. Other findings retain Harper's explanation. The rule browser also shows these examples.
+For a spelling finding, click Add globally to save the exact spelling to your personal dictionary for all documents and profiles. More actions selects this choice automatically. Its button tooltip and accessible name include the word. No scope change or settings window is needed.
+
+More actions offers only actions that apply to the selected finding. Dictionary actions appear for spelling findings; locating text and disabling a rule require a finding. Grammar rules, settings, and vocabulary remain available when there are no findings. Select another action and click Go to run it. Eight common rules include original explanations and before/after examples checked against bundled Harper. Other findings retain Harper's explanation. The rule browser also shows these examples.
 
 Use Tab and Shift+Tab to navigate controls, Space to activate a focused button, and underlined button mnemonics with Alt. F8 focuses the readable Status field. Escape closes a dialog or returns from the sidebar to Writer. Validation errors focus Status, and closing a child dialog restores its launching control. See [keyboard and accessibility details](docs/ACCESSIBILITY.md) for verification and remaining limits.
 
 Sidebar controls follow native font sizes and wrap into extra rows in narrow panels. Short panels scroll, and keyboard focus reveals the selected control. Dialogs keep large text readable, fit their viewport to the primary display, and provide native scrollbars for overflow.
 
-Choose the sidebar's scope before using More actions → Disable rule or Remember word: this document, this project, or everywhere. Document choices are stored inside the document and require saving the document to persist after closing it. Project choices are stored in `.libreharp.json`. Personal choices are stored in the LibreOffice profile.
+Choose the sidebar's scope before using More actions → Disable rule or Remember word in selected scope: this document, this project, or everywhere. Document choices are stored inside the document and require saving the document to persist after closing it. Project choices are stored in `.libreharp.json`. Personal choices are stored in the LibreOffice profile.
 
 Grammar rules searches 936 rules from the bundled Harper version. It shows the effective state and the scope responsible for it. Enable, Disable, and Use inherited default affect only the selected scope. Use inherited default removes that scope's explicit choice; a higher-precedence choice can still apply.
 

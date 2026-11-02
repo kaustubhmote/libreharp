@@ -9,6 +9,7 @@ from com.sun.star.lang import XComponent, XServiceInfo
 from com.sun.star.ui import XSidebarPanel, XToolPanel, XUIElement, XUIElementFactory
 
 from . import accessibility, layout
+from .checker import replacement_is_current
 from .rule_help import finding_text
 from .scopes import ScopeTarget
 from .uno_app import Action, Callback, Modify, Review, RuleBrowser, Selection, runtime, service
@@ -205,20 +206,15 @@ class SidebarReview(Review):
             204,
             28,
             Dropdown=True,
-            LineCount=7,
-            StringItemList=(
-                "More actions...",
-                "Show in document",
-                "Disable rule",
-                "Remember word",
-                "Grammar rules",
-                "Document / project settings",
-                "Words and terminology",
-            ),
+            LineCount=9,
+            StringItemList=("More actions...",),
             SelectedItems=(0,),
             HelpText="Choose an action, then press Go",
         )
         self.button("run", "~Go", 218, 488, 74, self.run_action)
+        self.more_actions = []
+        self.action_selection = Selection(self, self.action_changed)
+        self.dialog.getControl("more").addItemListener(self.action_selection)
         self.add(
             "auto",
             "CheckBox",
@@ -243,6 +239,7 @@ class SidebarReview(Review):
         layout.connect_viewport(self)
         self.viewport_bars = {"y": ScrollValue(self)}
         self.scrollbar.getPeer().setProperty("AccessibleName", "Sidebar scrollbar")
+        self.refresh_actions()
         self.post(self.check)
 
     def add(self, name, kind, x, y, width, height, **props):
@@ -378,6 +375,7 @@ class SidebarReview(Review):
         self.model.getByName("apply").Enabled = bool(issue["suggestions"])
         self.model.getByName("previous").Enabled = index > 0
         self.model.getByName("next").Enabled = index + 1 < len(self.rows)
+        self.refresh_actions(issue)
 
     def display(self):
         index = self.dialog.getControl("issues").getSelectedItemPos()
@@ -391,13 +389,76 @@ class SidebarReview(Review):
             self.model.getByName("apply").Enabled = False
             for name in ("previous", "next", "ignore"):
                 self.model.getByName(name).Enabled = False
+            self.refresh_actions()
+
+    def refresh_actions(self, issue=None):
+        actions = []
+        spelling = issue is not None and issue["rule"] == "SpellCheck"
+        if spelling:
+            actions.append(("Add word globally", self.global_word))
+        if issue is not None:
+            actions.extend((("Show in document", self.locate), ("Disable rule", self.disable)))
+        if spelling:
+            actions.append(("Remember word in selected scope", self.word))
+        actions.extend(
+            (
+                ("Grammar rules", self.browse_rules),
+                ("Document / project settings", self.settings),
+                ("Words and terminology", self.vocabulary),
+            )
+        )
+        self.updating_actions = True
+        try:
+            self.more_actions = actions
+            self.model.getByName("more").StringItemList = ("More actions...",) + tuple(
+                label for label, _ in actions
+            )
+            self.dialog.getControl("more").selectItemPos(1 if spelling else 0, True)
+        finally:
+            self.updating_actions = False
+        self.action_changed()
+
+    def action_changed(self):
+        if getattr(self, "updating_actions", False):
+            return
+        index = self.dialog.getControl("more").getSelectedItemPos()
+        action = self.more_actions[index - 1][1] if 0 < index <= len(self.more_actions) else None
+        global_word = action == self.global_word
+        button = self.model.getByName("run")
+        button.Label = "Add ~globally" if global_word else "~Go"
+        button.Enabled = action is not None
+        help_text = "Run the selected action"
+        if global_word:
+            _, (_, _, issue) = self.selected()
+            help_text = f'Add "{issue["text"]}" to your global dictionary for all documents and profiles.'
+        button.HelpText = help_text
+        self.dialog.getControl("run").getPeer().setProperty(
+            "AccessibleName", help_text if global_word else "Go"
+        )
+        self.model.getByName("more").HelpText = (
+            help_text if global_word else "Choose an action, then press Go"
+        )
+        rect = self.dialog.getPosSize()
+        self.layout(rect.Width, rect.Height)
 
     def run_action(self):
         index = self.dialog.getControl("more").getSelectedItemPos()
-        actions = (self.locate, self.disable, self.word, self.browse_rules, self.settings, self.vocabulary)
-        if index > 0:
-            actions[index - 1]()
-            self.dialog.getControl("more").selectItemPos(0, True)
+        if 0 < index <= len(self.more_actions):
+            self.more_actions[index - 1][1]()
+
+    def spelling_word(self):
+        _, (paragraph, original, issue) = self.selected()
+        if issue["rule"] != "SpellCheck":
+            raise ValueError("Select a spelling finding to remember a word.")
+        if not replacement_is_current(original, paragraph.String, issue):
+            self.check()
+            raise ValueError("This paragraph changed. Check again before remembering its word.")
+        return issue["text"]
+
+    def global_word(self):
+        word = self.spelling_word()
+        self.app.store.add_word(word)
+        self.app.changed()
 
     def ignore(self):
         index, _ = self.selected()
@@ -423,14 +484,12 @@ class SidebarReview(Review):
             self.app.changed()
 
     def word(self):
-        _, (_, _, issue) = self.selected()
-        if issue["rule"] != "SpellCheck":
-            raise ValueError("Select a spelling finding to remember a word.")
+        word = self.spelling_word()
         target = self.target()
         if target:
-            target.update(lambda d: d.update(words=sorted(set(d.get("words", [])) | {issue["text"]})))
+            target.update(lambda d: d.update(words=sorted(set(d.get("words", [])) | {word})))
         else:
-            self.app.store.add_word(issue["text"])
+            self.app.store.add_word(word)
             self.app.changed()
 
     def vocabulary(self):

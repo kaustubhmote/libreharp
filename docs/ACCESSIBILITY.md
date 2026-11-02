@@ -1,6 +1,6 @@
 # Use LibreHarp with a keyboard or screen reader
 
-Version 0.5.0 uses LibreOffice's native controls. The sidebar and dialogs expose explicit names for editable fields, lists, explanations, and status messages.
+Version 0.5.1 uses LibreOffice's native controls. The sidebar and dialogs expose explicit names for editable fields, lists, explanations, and status messages.
 
 ## Navigate the extension
 
@@ -15,6 +15,8 @@ Version 0.5.0 uses LibreOffice's native controls. The sidebar and dialogs expose
 | Escape | Close a dialog, or return from the sidebar to Writer while leaving the sidebar open. A native popup may handle Escape first. |
 
 Choose **LibreHarp → Open sidebar** to open the panel and focus its Findings selector. Tab reaches navigation, the explanation, replacements, scope, secondary actions, checking controls, and Status. The vocabulary editor keeps word entry and its buttons together before the terminology controls.
+
+For spelling findings, More actions preselects **Add word globally**. Tab from that selector to **Add globally**, then press Space to save the spelling for all documents and profiles. The button's accessible name includes the exact word. Arrow keys choose another action; the button becomes **Go**. Changing to a grammar finding removes the dictionary actions. The scope selector applies to **Remember word in selected scope**, not **Add globally**.
 
 Closing a child dialog returns focus to the control that opened it. Background checking preserves your focus. The F8 shortcut applies only inside LibreHarp; Writer retains its own F8 behavior when the document has focus.
 
@@ -32,7 +34,7 @@ LibreHarp follows LibreOffice's native font and display metrics. Sidebar buttons
 
 Dialogs keep the native font size and fit their viewport to the primary display. Native scrollbars provide access to overflow. Tab and Shift+Tab reveal the focused control, and F8 reveals Status. Wide multiline fields use the available viewport width.
 
-The tested startup settings are normal size, 150% and 200% GTK fonts, 144 and 192 DPI with generic VCL, and GTK 200% display scaling. The six cases cover 262 native checks, including actual window sizes, label fit, clipping by the host, scrollbar actions, and keyboard access to overflowing controls.
+The 0.5.0 startup matrix covers normal size, 150% and 200% GTK fonts, 144 and 192 DPI with generic VCL, and GTK 200% display scaling. Those six cases cover 262 native checks, including actual window sizes, label fit, clipping by the host, scrollbar actions, and keyboard access to overflowing controls. Version 0.5.1 repeats the 200% font and 192-DPI cases with the new dictionary button.
 
 ## Verification and limits
 

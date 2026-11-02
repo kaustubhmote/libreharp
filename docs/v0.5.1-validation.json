@@ -1,0 +1,43 @@
+{
+  "version": "0.5.1",
+  "unit_tests": 32,
+  "libreoffice_checks": 202,
+  "suites": {
+    "report": 28,
+    "scopes-report": 28,
+    "context-actions-report": 16,
+    "accessibility-report": 36,
+    "scaling-font200-report": 46,
+    "scaling-dpi200-report": 48
+  },
+  "package_sha256": "0244c5056c68301d25041c4622822d1da0dd5e70b21a678b3e88fd2db57a8a35",
+  "package_bytes": 14662754,
+  "deterministic": true,
+  "libreoffice": "26.8",
+  "harper": "3.0.0",
+  "visual_checks": [
+    "Installed sidebar at 200% GTK fonts",
+    "Installed sidebar at 192 DPI"
+  ],
+  "limits": [
+    "Linux x86-64 and LibreOffice 26.8 only",
+    "Other 0.5.0 scaling cases not repeated for this patch",
+    "No Orca speech or braille pass"
+  ],
+  "installation": {
+    "launcher": "/opt/software/libreoffice/bin/libreoffice",
+    "scope": "shared",
+    "previous_version": "0.5.0",
+    "verified_version": "0.5.1",
+    "profile": "/home/kaustubh/.config/libreoffice/4/user",
+    "loaded_services": [
+      "org.libreharp.Proofreader",
+      "org.libreharp.SidebarFactory",
+      "org.libreharp.ProtocolHandler"
+    ],
+    "english_grammar_services": [
+      "org.libreharp.Proofreader"
+    ],
+    "preferences_unchanged": true
+  }
+}

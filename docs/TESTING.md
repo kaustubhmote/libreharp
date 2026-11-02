@@ -1,6 +1,6 @@
 # LibreHarp test zone
 
-Version 0.5.0 targets Linux x86-64, LibreOffice 26.8, LibreOffice Python 3.13, and Harper 3.0.0. Development tests also run under Python 3.14.
+Version 0.5.1 targets Linux x86-64, LibreOffice 26.8, LibreOffice Python 3.13, and Harper 3.0.0. Development tests also run under Python 3.14.
 
 ## Reproduce the automated checks
 
@@ -15,6 +15,7 @@ uv run python -m unittest discover -s tests -v
 uv run python scripts/build.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_libreoffice.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_scopes_libreoffice.py
+uv run --no-project /path/to/libreoffice/program/python scripts/test_context_actions.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_extended_writer.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_complex_writer.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_accessibility.py
@@ -59,7 +60,13 @@ uv run --no-project /path/to/libreoffice/program/python scripts/preview_sidebar.
 
 This requires an X11 display, `xdotool`, and ImageMagick's `import`. It opens test documents and captures only its own Writer/sidebar and extension windows into `test-zone/`, then closes the test instance.
 
-## Current evidence
+## Version 0.5.1 dictionary shortcut
+
+The context-action suite exercises the installed sidebar's native controls. It verifies one-click global additions, refresh of two open documents, cross-profile vocabulary, persistence after restart, refusal of stale findings, document-scope isolation, and action changes when moving between grammar and spelling findings. The keyboard suite also checks action selection with arrow keys, Tab to the dictionary button, and Space to add the word. Scaling checks exercise the longer button label and focus reveal in a narrow panel.
+
+Version 0.5.1 passes 32 unit/engine tests and 202 LibreOffice checks: 28 baseline, 28 scope, 16 context-action, 36 keyboard, 46 at 200% fonts, and 48 at 192 DPI. The six reports and package checksum are retained in `v0.5.1-*.json`. The other 0.5.0 scaling cases and unrelated document-format suites were not repeated for this patch.
+
+## Version 0.5.0 baseline evidence
 
 - 32 unit/engine tests cover the core, scope precedence, project discovery/isolation, migration parsing, and rule help. All eight before/after examples are checked against the pinned engine.
 - 135 native LibreOffice regression checks: 28 baseline, 28 sidebar/scope, 30 extended, 17 complex-document, and 32 accessibility/keyboard checks.

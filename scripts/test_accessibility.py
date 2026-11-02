@@ -225,6 +225,29 @@ def main():
             "Status shortcut does not capture F8 in Writer",
             not any(has_focus(panel, n) for n in panel.control_names),
         )
+        doc.Text.String = "The QzxSidebarShortcut works."
+        panel.check()
+        assert wait_for(lambda: panel.model.getByName("run").Label == "Add ~globally")
+        panel.dialog.getControl("more").setFocus()
+        key(xid, "End")
+        test.record(
+            "Keyboard action selection replaces the global shortcut with Go",
+            wait_for(lambda: panel.model.getByName("run").Label == "~Go")
+            and panel.model.getByName("run").Enabled,
+        )
+        key(xid, "Home")
+        key(xid, "Down")
+        test.record(
+            "Keyboard selection restores the global shortcut",
+            wait_for(lambda: panel.model.getByName("run").Label == "Add ~globally"),
+        )
+        key(xid, "Tab")
+        test.record("Global shortcut is the next keyboard stop", has_focus(panel, "run"))
+        key(xid, "space")
+        test.record(
+            "Space adds the selected spelling to the global dictionary",
+            wait_for(lambda: "QzxSidebarShortcut" in app.store.read()["words"]),
+        )
         panel.close()
     finally:
         for window in list(app.windows):
