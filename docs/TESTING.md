@@ -1,6 +1,6 @@
-# LibreHarp test zone
+# Build and test LibreHarp
 
-See the [README](../README.md#development) for the current build and compatibility test commands. The [changelog](../CHANGELOG.md) records release results.
+The [changelog](../CHANGELOG.md) records release results. See [engine updates](ENGINE_UPDATES.md) for instructions on selecting a Harper release.
 
 ## Release checks
 
@@ -10,26 +10,48 @@ See the [README](../README.md#development) for the current build and compatibili
 - Report engine failures to the user.
 - Run tests with disposable profiles and documents.
 
-## Reproduce the automated checks
+## Build and run the Python tests
 
-From the project directory:
+Use Python 3.11 or later, uv, and Rust with Cargo. From the project directory, run the following commands.
 
 ```sh
 uv sync --locked
 uv run python scripts/vendor_engine.py
-uv run ruff check .
-uv run ruff format --check .
-uv run python -m unittest discover -s tests -v
+cargo fetch --locked --manifest-path weir-bridge/Cargo.toml
+uv run ruff check libreharp scripts tests
+uv run ruff format --check libreharp scripts tests
+uv run pytest -q
 uv run python scripts/build.py
+uv run python scripts/check_package.py
+```
+
+The build writes a versioned OXT and its SHA-256 checksum under `build/`.
+
+## Test LibreOffice installations
+
+```sh
+uv run python scripts/test_lo_matrix.py --appimage-root /path/to/libreoffice/images --gui
+uv run python scripts/test_lo_matrix.py /usr/lib/libreoffice/program --uno-python /usr/bin/python3
+```
+
+Pass individual AppImages, extracted roots, program directories, or `soffice` paths to select specific targets. For a distro install, point `--uno-python` to Python 3.11 or later with that distribution's UNO bindings. Each target gets a fresh profile. The runner writes its summary, logs, and suite reports under `test-zone/matrix/`. The optional `--gui` checks use Xephyr, Mutter, X11 tools, and ImageMagick.
+
+Run individual suites with LibreOffice's bundled Python or another Python with UNO support.
+
+```sh
 uv run --no-project /path/to/libreoffice/program/python scripts/test_libreoffice.py
+uv run --no-project /path/to/libreoffice/program/python scripts/test_harper_features.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_scopes_libreoffice.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_context_actions.py
+uv run --no-project /path/to/libreoffice/program/python scripts/test_context_menu.py
+uv run --no-project /path/to/libreoffice/program/python scripts/test_english_checking.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_extended_writer.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_complex_writer.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_accessibility.py
+uv run python scripts/isolated_display.py /path/to/libreoffice/program/python scripts/test_popup_writer.py
 ```
 
-Set `LIBREHARP_LO_PROGRAM` to that LibreOffice program directory if it differs from the default in the script. The script installs the OXT only into `test-zone/profile`, selects LibreHarp for English there, exercises the extension, restarts that LibreOffice instance, and records `test-zone/report.json`. It retains the profile so later runs also test extension replacement. The ordinary user profile is not used.
+Set `LIBREHARP_LO_PROGRAM` if a standalone script cannot find the LibreOffice program directory. Set `LIBREHARP_TEST_ZONE` to choose a separate directory for its disposable profile and reports. The installation suite defaults to `test-zone/profile` and writes `test-zone/report.json`. It retains that test profile between runs to exercise extension replacement.
 
 The installed Python UNO component and Writer's proofreading iterator are exercised directly. The installed sidebar factory creates a native panel, and its Apply button is activated through a native accessibility action. Other review/settings controls are instantiated against the real LibreOffice UNO context for inspection. Registered menu dispatch and visible deck activation are separately exercised from the installed OXT. The suite does not simulate every mouse click or claim a complete accessibility audit.
 

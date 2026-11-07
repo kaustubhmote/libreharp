@@ -1,13 +1,23 @@
-# Update the bundled engine
+# Manage the bundled Harper engine
 
-LibreHarp has no automatic updater. An engine update is a reviewed source change and a new versioned OXT.
+Each OXT includes one Harper release. The directories under `vendor/harper/releases/` retain its catalog, license, and provenance. The executable is restored from the pinned upstream release and checked against the recorded digest.
 
-1. Select an official Automattic/harper release and inspect its release notes and license. Record the exact platform asset and publisher-provided archive digest.
-2. Download the asset into a temporary directory. Verify its archive digest before extracting the single `harper-ls` executable. Record the executable digest in `vendor/harper/provenance.json`.
-3. Update the bundled license and `default_config.json` from the same tagged release. Check the catalog format, rule names, defaults and renamed/removed rules. The catalog parser rejects unknown setting variants.
-4. Review the LSP adapter against that engine. The Unicode code-action workaround in `engine.py` applies only to Harper 3.0.0. Do not extend it to another version without reproducing its behavior.
-5. Run core tests, real-engine tests, the three isolated LibreOffice suites, and the visible sidebar preview. Include long-sentence suppression, dictionary invalidation, document/project isolation, Unicode replacements, migration and Undo.
-6. Bump the application version in `libreharp/__init__.py`, `pyproject.toml`, and `extension/description.xml`. Refresh `uv.lock` if project metadata changes.
-7. Build and verify the OXT, rebuild it to confirm its digest is deterministic, and preserve its checksum, test reports and release notes.
+## Build with a retained engine
 
-Do not substitute a binary found on PATH or run Cargo during extension installation. `scripts/vendor_engine.py` restores only the release already pinned in provenance. It is not a mechanism for selecting an update.
+Use `--harper-version` to build an alternate OXT while keeping the default selection.
+
+```sh
+uv run python scripts/vendor_engine.py --version 3.0.0
+uv run python scripts/build.py --harper-version 3.0.0
+uv run python scripts/check_package.py build/LibreHarp_v0.9_harper-3.0.0.oxt
+```
+
+Use `uv run python scripts/vendor_engine.py --select VERSION` to verify and change the default in `vendor/harper/selected.json`. Rebuild the OXT and install it to use the new selection in Writer. The Harper 3.1.0 build includes a Weir helper compiled against the matching pinned Harper commit and ships its dependency notices.
+
+## Add a Harper release
+
+1. Choose an official Automattic/harper release. Record its Linux x86-64 asset, release URL, and published archive checksum.
+2. Verify the archive before extracting `harper-ls`. Record the executable checksum in the new release directory's `provenance.json`.
+3. Copy the tagged release's license and `default_config.json` into the new directory. Record their checksums and compare rule identifiers and defaults with the previous release.
+4. Review Unicode code actions and check that replacements after emoji target the correct range. If the build supports Weir, pin the helper to the matching source commit.
+5. Select the release, run the [build and test checks](TESTING.md), and verify the OXT and checksum before distribution.
