@@ -1,6 +1,6 @@
 # Third-party components
 
-LibreHarp's new Python source is distributed under GPL-3.0-or-later; see LICENSE.
+LibreHarp's original code and artwork use the [Zero-Clause BSD license (0BSD)](LICENSE).
 
 The Harper language server is from Automattic/harper, distributed under Apache-2.0. The default build uses Harper 3.1.0. A build can select the retained 3.0.0 release instead. Each package includes one Harper release, its license, its provenance, and the unmodified `default_config.json` catalog in `vendor/harper/`. The package's `provenance.json` identifies the release and checksums.
 

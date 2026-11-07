@@ -736,11 +736,34 @@ class Review(Window):
 
 class About(Window):
     def __init__(self, app):
-        super().__init__(app, f"About LibreHarp {__version__}", 220, 83)
-        self.add("version", "FixedText", 8, 9, 204, 14, Label=f"LibreHarp {__version__}")
+        super().__init__(app, f"About LibreHarp {__version__}", 220, 128)
+        self.add(
+            "icon",
+            "ImageControl",
+            8,
+            8,
+            26,
+            30,
+            ImageURL="vnd.sun.star.extension://org.libreharp/icons/libreharp-42.png",
+            Border=0,
+        )
+        self.add("version", "FixedText", 42, 9, 170, 14, Label=f"LibreHarp {__version__}")
         harper = engine_metadata(engine_directory())["version"]
-        self.add("engine_version", "FixedText", 8, 27, 204, 14, Label=f"Harper {harper}")
-        self.button("close", "Close", 134, 54, 78, self.close)
+        self.add("engine_version", "FixedText", 42, 25, 170, 14, Label=f"Harper {harper}")
+        self.add("maintainer", "FixedText", 8, 48, 204, 14, Label="Maintained by Kaustubh R. Mote")
+        self.add("ai_assistance", "FixedText", 8, 64, 204, 14, Label="AI development assistance from Codex")
+        source_url = "https://github.com/kaustubhmote/libreharp"
+        self.add(
+            "source_link",
+            "FixedHyperlink",
+            8,
+            83,
+            204,
+            14,
+            Label=source_url.removeprefix("https://"),
+            URL=source_url,
+        )
+        self.button("close", "Close", 134, 104, 78, self.close)
 
 
 class Settings(Window):

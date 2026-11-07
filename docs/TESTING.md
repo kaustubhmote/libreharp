@@ -1,6 +1,14 @@
 # LibreHarp test zone
 
-Version 0.5.1 targets Linux x86-64, LibreOffice 26.8, LibreOffice Python 3.13, and Harper 3.0.0. Development tests also run under Python 3.14.
+See the [README](../README.md#development) for the current build and compatibility test commands. The [changelog](../CHANGELOG.md) records release results.
+
+## Release checks
+
+- Verify that permanent rule suppression survives a LibreOffice restart and dictionary edits invalidate cached results.
+- Verify that document overrides stay within their document.
+- Reject suggestions for text that has changed. Verify that accepted suggestions support Undo.
+- Report engine failures to the user.
+- Run tests with disposable profiles and documents.
 
 ## Reproduce the automated checks
 
@@ -85,4 +93,6 @@ Version 0.5.1 passes 32 unit/engine tests and 202 LibreOffice checks: 28 baselin
 
 ## Gaps
 
-No Windows/macOS tests, older LibreOffice compatibility matrix, Orca listening or braille pass, exhaustive keyboard audit, high-contrast theme checks, or live changes between monitors with different scales. Dialog fitting uses the primary work area. Fixed startup font/DPI cases exercise the default, generic, and GTK3 backends; they do not repeat every accessibility action at every scale. Overlapping redlines, protected sections, more field types, and files created by other applications need broader coverage. Inline proofreading is tested through Writer's API, not by pixel recognition of underlines. Field exclusion and mixed-language segmentation are review/sidebar features; inline checks follow Writer's text and language.
+Expand compatibility testing to distro-installed and older LibreOffice versions, Windows, and macOS. Test Orca speech and braille, high-contrast themes, and live changes between monitors with different scales. Fixed startup scaling tests cover the default, generic, and GTK3 backends and use the primary work area for dialog fitting.
+
+Expand document coverage to overlapping tracked changes, protected sections, more field types, and DOCX files created by other word processors. Measure review performance beyond 1,000 paragraphs.

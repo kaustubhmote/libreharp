@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <description xmlns="http://openoffice.org/extensions/description/2006" xmlns:xlink="http://www.w3.org/1999/xlink">
   <identifier value="org.libreharp"/>
-  <version value="0.8.2"/>
+  <version value="0.9"/>
   <platform value="linux_x86_64"/>
   <display-name><name lang="en">LibreHarp</name></display-name>
-  <publisher><name lang="en">LibreHarp contributors</name></publisher>
+  <publisher>
+    <name lang="en" xlink:href="https://github.com/kaustubhmote/libreharp">Kaustubh R. Mote</name>
+  </publisher>
+  <icon>
+    <default xlink:href="icons/libreharp-42.png"/>
+    <high-contrast xlink:href="icons/libreharp-42.png"/>
+  </icon>
+  <extension-description>
+    <src lang="en" xlink:href="description-en.txt"/>
+  </extension-description>
   <dependencies><OpenOffice.org-minimal-version value="4.1" name="LibreOffice with Python 3.11 or later"/></dependencies>
 </description>

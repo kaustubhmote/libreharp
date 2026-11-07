@@ -2,11 +2,18 @@
 
 An independent LibreOffice Writer extension with bundled Harper, a dockable review sidebar, persistent grammar preferences, personal words, and terminology rules.
 
-Version 0.8.2 is a Linux x86-64 build. See PLAN.md for milestones and WORK_LOG.md for test evidence.
+Version 0.9 is a Linux x86-64 build. See the [changelog](CHANGELOG.md) for release history.
+
+## Contributors
+
+- **Kaustubh R. Mote** leads and maintains LibreHarp.
+- **Codex** provided AI assistance with implementation, tests, and documentation.
+
+LibreHarp's original code and artwork use the [Zero-Clause BSD license (0BSD)](LICENSE). See [third-party notices](THIRD_PARTY.md) for Harper and its dependencies.
 
 ## Use
 
-Install `build/LibreHarp_v0.8.2.oxt` through LibreOffice's Extension Manager and restart LibreOffice. In Writer, choose LibreHarp → About LibreHarp to see the installed extension and Harper versions. Choose LibreHarp → Use LibreHarp for English checking to use LibreHarp for both spelling and grammar. This enables automatic checking and disables competing providers for US, British, Australian, Canadian, and Indian English. Other languages and unsupported English dialects keep their existing providers.
+Install `build/LibreHarp_v0.9.oxt` through LibreOffice's Extension Manager and restart LibreOffice. In Writer, choose LibreHarp → About LibreHarp to see the installed extension and Harper versions. Choose LibreHarp → Use LibreHarp for English checking to use LibreHarp for both spelling and grammar. This enables automatic checking and disables competing providers for US, British, Australian, Canadian, and Indian English. Other languages and unsupported English dialects keep their existing providers.
 
 Checker choices apply to the whole LibreOffice profile. This mode also disables native spelling for those English dialects in Calc and Impress, where LibreHarp does not run. Choose LibreHarp → Restore previous English checkers to recover the saved provider selections and automatic-check settings. Repeating the takeover action preserves the original restore point. Installation alone does not change checker choices.
 
@@ -99,10 +106,10 @@ To build a rollback package without changing the default selection, run:
 ```sh
 uv run python scripts/vendor_engine.py --version 3.0.0
 uv run python scripts/build.py --harper-version 3.0.0
-uv run python scripts/check_package.py build/LibreHarp_v0.8.2_harper-3.0.0.oxt
+uv run python scripts/check_package.py build/LibreHarp_v0.9_harper-3.0.0.oxt
 ```
 
-The separate filename preserves the normal `LibreHarp_v0.8.2.oxt` package. Install the chosen OXT through Extension Manager and restart LibreOffice. Changing the repository selection alone does not change an installed extension.
+The separate filename preserves the normal `LibreHarp_v0.9.oxt` package. Install the chosen OXT through Extension Manager and restart LibreOffice. Changing the repository selection alone does not change an installed extension.
 
 To change the default engine, run `uv run python scripts/vendor_engine.py --select 3.0.0`. The command verifies the complete release before changing the selection. Use `--select 3.1.0` to return to the current engine. Run the tests and rebuild after changing the selection.
 
@@ -140,7 +147,7 @@ uv run --no-project /path/to/libreoffice/program/python scripts/preview_sidebar.
 
 Set `LIBREHARP_LO_PROGRAM` if the standalone scripts cannot find `soffice` and `unopkg`. Set `LIBREHARP_TEST_ZONE` to put the standalone scripts' test profile and reports in a separate directory. The installation test writes `report.json` there.
 
-See WORK_LOG.md for the tested LibreOffice versions and results.
+See the [testing guide](docs/TESTING.md) for release checks and coverage.
 
 ## Current scope
 
@@ -149,3 +156,5 @@ English grammar and spelling only. No remote service is used. Harper 3.1.0 is bu
 Review covers body text, tables, frames, footnotes, endnotes, and headers/footers of used page styles. It checks contiguous English text portions and preserves their paragraph offsets. Field contents are excluded. Text on either side can be checked when Writer exposes matching text ranges; replacements use those native ranges and cannot overwrite fields. Unsupported paragraph representations and wholly non-English paragraphs are skipped and counted in the status. Inline proofreading follows Writer's language selection. Personal words suppress exact spelling findings; they do not teach Harper grammatical word classes. Paragraphs exceeding Harper's 120 KB limit produce an error instead of a clean result.
 
 ODT and DOCX document-setting round trips, merged and nested table edits, footnote replacements, input-field preservation, and replacement alongside existing tracked changes are tested. A 1,000-paragraph review completed in about 15 seconds on the development machine; this is one local measurement, not a performance guarantee. Native keyboard and accessibility-tree checks are covered, along with a GTK3/AT-SPI bridge probe. Spoken screen-reader output, live changes between monitor scales, overlapping redlines, other field types, and other file formats need broader coverage. Manual edits to a project file are picked up on the next check; use Check after changing one externally.
+
+Planned improvements include more rule explanations and translations. An update UI depends on a trusted distribution channel and explicit user approval before downloading or running an engine update.

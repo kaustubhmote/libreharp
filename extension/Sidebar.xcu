@@ -4,7 +4,8 @@
   <node oor:name="DeckList"><node oor:name="LibreHarpDeck" oor:op="replace">
    <prop oor:name="Title"><value xml:lang="en-US">LibreHarp</value></prop>
    <prop oor:name="Id"><value>LibreHarpDeck</value></prop>
-   <prop oor:name="IconURL"><value>private:graphicrepository/cmd/sc_spellingandgrammardialog.png</value></prop>
+   <prop oor:name="IconURL"><value>vnd.sun.star.extension://org.libreharp/icons/libreharp.svg</value></prop>
+   <prop oor:name="HighContrastIconURL"><value>vnd.sun.star.extension://org.libreharp/icons/libreharp.svg</value></prop>
    <prop oor:name="OrderIndex"><value>700</value></prop>
    <prop oor:name="ContextList"><value oor:separator=";">com.sun.star.text.TextDocument, any, visible</value></prop>
   </node></node>

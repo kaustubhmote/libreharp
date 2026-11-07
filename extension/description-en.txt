@@ -1,0 +1,5 @@
+LibreHarp uses Harper to check English spelling and grammar locally in LibreOffice Writer.
+
+Kaustubh R. Mote maintains LibreHarp. Codex provided AI development assistance.
+
+LibreHarp's original code and artwork use the Zero-Clause BSD license (0BSD). Harper uses Apache-2.0.

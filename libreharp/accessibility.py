@@ -197,7 +197,9 @@ def configure(owner, sidebar=False):
             model.TabIndex = index
         if not info.hasPropertyByName("Tabstop"):
             continue
-        if model.supportsService("com.sun.star.awt.UnoControlFixedTextModel"):
+        if model.supportsService("com.sun.star.awt.UnoControlFixedTextModel") or model.supportsService(
+            "com.sun.star.awt.UnoControlImageControlModel"
+        ):
             model.Tabstop = False
             continue
         model.Tabstop = True

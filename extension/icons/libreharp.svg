@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 64 64">
+  <title>LibreHarp</title>
+  <rect x="3" y="3" width="58" height="58" rx="14" fill="#173651" stroke="#A5E9DA" stroke-width="2"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 20v26h13M17 20q12-13 29 1l-8 14" stroke="#F5FBFF" stroke-width="4.5"/>
+    <path d="M24 23q2-4.5 4 0t4 0t4 0t4 0
+             M24 30q2-4.5 4 0t4 0t4 0
+             M24 37q2-4.5 4 0t4 0" stroke="#BFD9E9" stroke-width="2.8"/>
+    <path d="m35 43 5 5 11-12" stroke="#72F4C5" stroke-width="5"/>
+  </g>
+</svg>
