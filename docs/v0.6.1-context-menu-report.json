@@ -1,0 +1,27 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "Popup targets the selected occurrence after a non-BMP character",
+    "Spelling popup replaces native actions",
+    "Spelling popup offers global and document words",
+    "Unsaved documents omit project actions",
+    "Document word action preserves personal and sibling dictionaries",
+    "Global word action persists",
+    "Global words also reach Writer spelling",
+    "Grammar popup omits word actions",
+    "Grammar popup offers temporary and durable ignores",
+    "Ordinary text menus retain their original commands",
+    "A command cannot act through a different document frame",
+    "Popup suggestion edits its captured range",
+    "Popup suggestion supports Undo",
+    "Document rule action preserves sibling and global choices",
+    "Global rule action persists",
+    "Stale menu actions refuse preference changes",
+    "Popup resolves a table cell independently of body text",
+    "Removing a global word also removes its Writer mirror",
+    "Bindings attach one interceptor per Writer controller",
+    "Closed documents release interceptors and commands"
+  ],
+  "errors": [],
+  "passed": true
+}

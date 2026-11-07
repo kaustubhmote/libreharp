@@ -2,15 +2,25 @@
 
 An independent LibreOffice Writer extension with bundled Harper, a dockable review sidebar, persistent grammar preferences, personal words, and terminology rules.
 
-Version 0.5.1 is a Linux x86-64 development release. See PLAN.md for completed milestones and remaining work, and WORK_LOG.md for decisions and test evidence.
+Version 0.6.2 is a Linux x86-64 development release. See PLAN.md for completed milestones and remaining work, and WORK_LOG.md for decisions and test evidence.
 
 ## Use
 
-Install `build/LibreHarp_v0.5.1.oxt` through LibreOffice's Extension Manager and restart LibreOffice. In Tools → Options → Languages and Locales → Writing Aids, enable LibreHarp as the English grammar checker. Deselect competing English grammar checkers if they hide its results. Hunspell spelling can remain enabled. Enable automatic spell and grammar checking for inline feedback.
+Install `build/LibreHarp_v0.6.2.oxt` through LibreOffice's Extension Manager and restart LibreOffice. Choose LibreHarp → Use LibreHarp for English checking to use LibreHarp for both spelling and grammar. This enables automatic checking and disables competing providers for US, British, Australian, Canadian, and Indian English. Other languages and unsupported English dialects keep their existing providers.
+
+Checker choices apply to the whole LibreOffice profile. This mode also disables native spelling for those English dialects in Calc and Impress, where LibreHarp does not run. Choose LibreHarp → Restore previous English checkers to recover the saved provider selections and automatic-check settings. Repeating the takeover action preserves the original restore point. Installation alone does not change checker choices.
+
+To keep native spelling alongside LibreHarp, select LibreHarp as the English grammar checker in Tools → Options → Languages and Locales → Writing Aids, and leave Hunspell enabled. Enable automatic spell and grammar checking for inline feedback.
 
 Set the text language to English and choose LibreHarp → Open sidebar. Select a finding from the top dropdown, read its context and explanation, then choose a replacement and Apply. Previous and Next move through findings. The explanation grows with the panel's height. The sidebar keeps the nearest finding selected after edits and ignores. It rechecks one second after document edits while open. Replacements support Writer's Undo and track-changes mode. The separate Review document window remains available.
 
-For a spelling finding, click Add globally to save the exact spelling to your personal dictionary for all documents and profiles. More actions selects this choice automatically. Its button tooltip and accessible name include the word. No scope change or settings window is needed.
+Right-click an English spelling or grammar underline to open the LibreHarp menu. **Replace**, **Remember word**, and **Disable rule** group the actions with Unicode tree branches. All branches stay visible and run in one click. Group headings have no action. **Ignore once** applies until the next check. **Open sidebar** shows the finding's explanation in the existing sidebar. Ordinary text menus keep their commands and gain a LibreHarp submenu when the selection overlaps a finding. Tracked-change commands remain available.
+
+Add globally saves the exact word across documents and profiles. LibreHarp also mirrors personal words into an in-memory Writer dictionary and rebuilds it at startup. Removing a personal word removes it from this mirror. Other Writer dictionaries remain unchanged. Document and project words and rule choices affect LibreHarp. In exclusive English mode, no separate native English provider remains to add duplicate findings. If native spelling remains enabled, it can still flag words accepted only in a LibreHarp document or project.
+
+Ignore once dismisses the clicked occurrence until the next check. Disable rule saves a lasting choice in the selected scope. Document choices require saving the document. Project branches appear for locally saved documents. Read-only documents omit replacement and document-scope actions. Actions refuse to edit or save a finding if its paragraph has changed. Unsupported languages retain Writer's original menu. If no completed LibreHarp result is cached, the popup offers the sidebar to check the text without blocking the menu on the engine.
+
+For a spelling or word-splitting finding, click Add globally to save the exact spelling to your personal dictionary for all documents and profiles. More actions selects this choice automatically. Its button tooltip and accessible name include the word. No scope change or settings window is needed.
 
 More actions offers only actions that apply to the selected finding. Dictionary actions appear for spelling findings; locating text and disabling a rule require a finding. Grammar rules, settings, and vocabulary remain available when there are no findings. Select another action and click Go to run it. Eight common rules include original explanations and before/after examples checked against bundled Harper. Other findings retain Harper's explanation. The rule browser also shows these examples.
 
@@ -25,6 +35,10 @@ Grammar rules searches 936 rules from the bundled Harper version. It shows the e
 Disable rule everywhere saves a global preference. Ignore once hides the current review finding until the next check. Writer's own Ignore All callback is session-only; use LibreHarp's settings for permanent choices.
 
 Settings supports named profiles, English dialects, personal words, `RuleName=false` overrides, a custom sentence word limit, and literal `find => replacement` terminology rules. Set `LongSentences=false` to permanently disable Harper's long-sentence warning. Global overrides take precedence over profiles. Remove a rule line to restore Harper's default. Personal words are case-sensitive. Custom terminology is literal, case-sensitive, and word-boundary matched, not executable code or arbitrary regular expressions.
+
+Accepted words suppress only exact `SpellCheck` and `SplitWords` findings. For example, accepting `homonuclear` and `radiofrequency` keeps those forms while leaving `SplitWords` active for other text such as `inthe`. Other grammar and terminology checks remain active. Matching is case-sensitive; add `Homonuclear` separately if you use that capitalization. Existing saved words gain this behavior automatically.
+
+To add many personal words, open LibreHarp → Personal words and terminology → Add word list. Paste one word per line and click Add words. Blank lines and duplicate entries are ignored. The list merges with your saved words. Invalid entries reject the whole list without changing the saved vocabulary. For a document or project list, choose that scope in the sidebar, then open More actions → Words and terminology → Add word list. Save the document to keep document-scoped words.
 
 Use Words and terminology for dedicated add/remove controls. The sidebar opens that editor in its selected scope; the menu's Personal words and terminology edits personal vocabulary. The advanced text fields remain available in personal settings.
 
@@ -69,6 +83,9 @@ uv run --no-project /path/to/libreoffice/program/python scripts/test_libreoffice
 uv run --no-project /path/to/libreoffice/program/python scripts/test_scopes_libreoffice.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_extended_writer.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_complex_writer.py
+uv run --no-project /path/to/libreoffice/program/python scripts/test_english_checking.py
+uv run --no-project /path/to/libreoffice/program/python scripts/test_context_menu.py
+uv run python scripts/isolated_display.py /path/to/libreoffice/program/python scripts/test_popup_writer.py
 uv run --no-project /path/to/libreoffice/program/python scripts/test_accessibility.py
 uv run --no-project /path/to/libreoffice/program/python scripts/preview_libreoffice.py
 uv run --no-project /path/to/libreoffice/program/python scripts/preview_sidebar.py

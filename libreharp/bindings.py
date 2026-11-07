@@ -69,6 +69,7 @@ class Bindings:
             self.refreshing = True
         changed = False
         try:
+            self.app.context_menus.sync_words()
             desktop = service(self.app.ctx, "frame.Desktop")
             iterator = service(self.app.ctx, "linguistic2.ProofreadingIterator")
             enum = desktop.getComponents().createEnumeration()
@@ -80,6 +81,9 @@ class Bindings:
                     continue
                 uid = str(doc.RuntimeUID)
                 open_uids.add(uid)
+                controllers = doc.getControllers()
+                while controllers.hasMoreElements():
+                    self.app.context_menus.attach(controllers.nextElement())
                 if uid not in self.documents:
                     listener = DocumentModify(self)
                     doc.addModifyListener(listener)
@@ -122,6 +126,7 @@ class Bindings:
                     old.removeModifyListener(listener)
                 except Exception:
                     pass
+            self.app.context_menus.prune(open_uids)
         except Exception:
             self.app.log_error()
         finally:

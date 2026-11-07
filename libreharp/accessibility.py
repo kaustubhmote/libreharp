@@ -33,6 +33,7 @@ OVERRIDES = {
     "RuleBrowser": {"rules": "Grammar rules"},
     "ScopedSettings": {"profile": "Profile override", "dialect": "Dialect override"},
     "Vocabulary": {"words": "Remembered words", "terms": "Saved terminology"},
+    "BulkWords": {"word_list": "Words to add, one per line"},
     "Migration": {"path": "Optional dictionary file"},
     "SidebarReview": {"scope": "Scope for remembered words and disabled rules"},
 }
@@ -42,6 +43,7 @@ ORDERS = {
         "word",
         "add_word",
         "remove_word",
+        "word_list",
         "terms",
         "find",
         "replacement",

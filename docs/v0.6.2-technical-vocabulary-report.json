@@ -1,0 +1,24 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "Split-word finding exposes the installed global dictionary shortcut",
+    "Installed shortcut saves the exact compound without disabling its rule",
+    "Global compound acceptance refreshes both installed sidebars",
+    "Other split words and grammar errors remain flagged",
+    "Split-word popup offers direct grouped global and document acceptance",
+    "Popup scoped acceptance saves only to its document",
+    "Inline scoped compound acceptance leaves the sibling flagged",
+    "Stale split-word actions cannot change the global vocabulary",
+    "Bulk entry exposes an accessible multiline field",
+    "Closing the vocabulary editor closes its bulk-entry dialog",
+    "Bulk global acceptance merges unique words and preserves other preferences",
+    "Successful bulk entry clears the field and reports the unique count",
+    "Invalid pasted list does not partially save or discard input",
+    "Bulk document vocabulary remains scoped and prompts saving",
+    "Bulk project vocabulary persists separately from global and document lists",
+    "Accepted compounds persist after restarting the installed extension",
+    "A fresh preference store retains all bulk global words"
+  ],
+  "errors": [],
+  "passed": true
+}

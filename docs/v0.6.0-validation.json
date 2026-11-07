@@ -1,0 +1,20 @@
+{
+  "version": "0.6.0",
+  "unit_engine_tests": 34,
+  "libreoffice_checks": {
+    "baseline": 28,
+    "context-menu": 20,
+    "popup": 10,
+    "sidebar-actions": 16,
+    "scopes": 28,
+    "english-checking": 13
+  },
+  "sha256": "e9483ac9934eed17bc7ce6c9f507d91fce5acd8d02c7e0acc04d9bc6828143cd",
+  "payload_files": 32,
+  "reproducible": true,
+  "limitations": [
+    "Exclusive checking is opt-in for en-US, en-GB, en-AU, en-CA, and en-IN. Provider selection is profile-wide, so native spelling for those dialects is also disabled in Calc and Impress, where LibreHarp does not run.",
+    "Validated on Linux x86-64 with LibreOffice 26.8."
+  ],
+  "installation": "Installed into the existing shared LibreOffice installation after explicit user approval. English-only mode enabled in the normal profile and verified after restart. Personal preferences checksum unchanged; previous checker choices saved for restoration."
+}

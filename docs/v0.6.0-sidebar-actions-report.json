@@ -1,0 +1,23 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "Spelling finding preselects the global dictionary action",
+    "Dictionary button exposes the exact word and global scope",
+    "One native button action saves the global word",
+    "Global shortcut leaves selected scope and document settings unchanged",
+    "Both open sidebars recheck after a global dictionary addition",
+    "Empty sidebar retains management actions without finding actions",
+    "Global dictionary word applies to another profile",
+    "Grammar findings omit dictionary actions and do not preselect disabling",
+    "Changing selection to grammar removes the spelling shortcut",
+    "Returning to a spelling finding restores its one-click shortcut",
+    "Spelling shortcut returns when a word is removed",
+    "A stale spelling finding cannot add an old word",
+    "Explicit scoped word action still saves only to the document",
+    "Document word does not silence another document",
+    "Global shortcut works even when project scope is selected on an unsaved document",
+    "One-click global dictionary addition survives a LibreOffice restart"
+  ],
+  "errors": [],
+  "passed": true
+}

@@ -1,0 +1,21 @@
+{
+  "version": "0.6.2",
+  "checks": [
+    "Release payload hashes verified before installation",
+    "Version 0.6.2 installed in the existing shared LibreOffice installation",
+    "All installed payloads match the release",
+    "Installed component loads: org.libreharp.Proofreader",
+    "Installed component loads: org.libreharp.ProtocolHandler",
+    "Installed component loads: org.libreharp.SidebarFactory",
+    "English checker choices and automatic checking are unchanged",
+    "Personal state preserved: preferences.json",
+    "Personal state preserved: previous-english-checkers.json"
+  ],
+  "preserved_files_sha256": {
+    "preferences.json": "771a604b8e2cc35f477ef7ee7f9f0ff06a0109d385fbdd6619469763280fcbb6",
+    "previous-english-checkers.json": "2e8a799a999c4161f637c25f340fe8d1e5d128f633f512a9f9d27dbd43d7a3e2"
+  },
+  "installed_package": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/share/uno_packages/cache/uno_packages/lu71376lk6hu.tmp_/LibreHarp_v0.6.2.oxt",
+  "package_sha256": "a4ef4a12b6abc02d782e83b8e5c17fdf8fd5361ea220f1c05c7ad1c89cbc3564",
+  "passed": true
+}

@@ -18,6 +18,7 @@ from .checker import Checker, replacement_is_current
 from .engine import Engine
 from .rule_help import explanation
 from .store import Store, fingerprint
+from .vocabulary import is_word_finding
 
 ROOT = Path(__file__).resolve().parent.parent
 PROOFREADER = "org.libreharp.Proofreader"
@@ -45,6 +46,9 @@ class Runtime:
         self.checker = Checker(self.store, self.engine)
         self.proofreaders = []
         self.windows = []
+        from .context_menu import ContextMenus
+
+        self.context_menus = ContextMenus(self)
         from .bindings import Bindings
 
         self.bindings = Bindings(self)
@@ -55,6 +59,7 @@ class Runtime:
             stream.write(traceback.format_exc() + "\n")
 
     def changed(self):
+        self.context_menus.sync_words()
         for proofreader in self.proofreaders:
             proofreader.recheck()
         for window in tuple(self.windows):
@@ -546,9 +551,11 @@ class Review(Window):
         self.check()
 
     def word(self):
-        _, (_, _, issue) = self.selected()
-        if issue["rule"] != "SpellCheck":
-            raise ValueError("Select a spelling finding to remember a word.")
+        _, (paragraph, original, issue) = self.selected()
+        if not is_word_finding(issue):
+            raise ValueError("Select a spelling or word-splitting finding to remember a word.")
+        if not replacement_is_current(original, paragraph.String, issue):
+            raise ValueError("This paragraph changed. Check again before remembering its word.")
         self.app.store.add_word(issue["text"])
         self.app.changed()
         self.check()
@@ -1025,6 +1032,14 @@ class ProtocolHandler(unohelper.Base, XDispatchProvider, XDispatch, XInitializat
 
     def dispatch(self, url, args):
         try:
+            if url.Path.startswith("context/"):
+                self.app.context_menus.execute(url.Path, self.frame)
+                return
+            if url.Path in ("english", "restore-english"):
+                from .english_checking import configure
+
+                configure(self.app, restore=url.Path == "restore-english")
+                return
             document = (
                 self.frame.Controller.Model
                 if self.frame

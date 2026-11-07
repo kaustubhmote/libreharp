@@ -1,0 +1,21 @@
+{
+  "version": "0.6.1",
+  "checks": [
+    "Pre-install state preserved: preferences.json",
+    "Pre-install state preserved: previous-english-checkers.json",
+    "Installed component loads: org.libreharp.Proofreader",
+    "Installed component loads: org.libreharp.ProtocolHandler",
+    "Installed component loads: org.libreharp.SidebarFactory",
+    "Existing exclusive English checking remains enabled",
+    "State remains unchanged after startup: preferences.json",
+    "State remains unchanged after startup: previous-english-checkers.json",
+    "Version 0.6.1 is present in the shared installation",
+    "All 33 installed payload hashes match the release"
+  ],
+  "preserved_files_sha256": {
+    "preferences.json": "aea105531ee7a67c26398e2d2de085c63ed058c8247ed05864b592520358386b",
+    "previous-english-checkers.json": "2e8a799a999c4161f637c25f340fe8d1e5d128f633f512a9f9d27dbd43d7a3e2"
+  },
+  "installed_package": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/share/uno_packages/cache/uno_packages/lu223390242byjz.tmp_/LibreHarp_v0.6.1.oxt",
+  "passed": true
+}

@@ -139,3 +139,49 @@ Validation reports and final counts are retained in the versioned report files u
 - Passed 32 unit/engine tests and 202 LibreOffice checks: 28 baseline, 28 scope, 16 context-action, 36 keyboard, 46 at 200% fonts, and 48 at 192 DPI. Inspected both installed-panel screenshots. The new tests exercise native button actions, real keyboard selection and Space activation, two open documents, selection changes, scope isolation, stale findings, and persistence after restarting LibreOffice.
 - Verified 30 package payloads and byte-identical rebuilds. SHA-256: `0244c5056c68301d25041c4622822d1da0dd5e70b21a678b3e88fd2db57a8a35`. The six passing reports and validation summary are retained under `docs/v0.5.1-*`.
 - Upgraded the existing shared installation for `/opt/software/libreoffice/bin/libreoffice` to 0.5.1. After extension synchronization, verified the installed version and loaded the proofreader, sidebar factory, and protocol handler in the normal profile. English grammar services still select LibreHarp, and the personal preferences file checksum is unchanged. Closed only the verification instance.
+
+## Version 0.6.0 Writer context menus
+
+- Writer spelling and grammar popups now show LibreHarp suggestions, Ignore once, global and scoped word actions, scoped rule disabling, and links to vocabulary and rule management. Ordinary text menus retain their commands and gain a LibreHarp submenu for matching findings. Tracked-change commands remain available. Other extensions can continue processing the modified menu.
+- Menu commands capture the originating frame, paragraph, and finding. Replacements retain Writer Undo and reject changed paragraphs. Dictionary and rule actions also reject stale findings. Unsaved documents omit project actions. Non-English text keeps its native menu. Controllers register once and release their commands when closed.
+- Menus read completed results without waiting on Harper's worker lock. Cold results offer the sidebar. Fixed the initial cache key to use the version reported after starting Harper.
+- Personal words are mirrored into an in-memory Writer dictionary. The durable LibreHarp preference file remains the source, and the mirror rebuilds at startup. Removing a word removes its mirror. Scoped words and rule overrides remain LibreHarp-specific. Context-menu registration does not change checking services; the opt-in English mode described below does.
+- Added source integration tests against real Writer ranges, installed-popup keyboard and mouse tests, and cache regression tests. Validation results are recorded in the release report.
+
+### Version 0.6.0 validation
+
+- Passed 34 unit/engine tests and 115 LibreOffice checks: 28 baseline, 20 context-menu range/action checks, 10 installed-popup checks, 16 existing sidebar dictionary checks, 28 scope checks, and 13 exclusive-English checks. The popup test exercises real keyboard and mouse input, verifies that Ignore once removes only one of two repeated spelling underlines, and confirms global word persistence after restarting LibreOffice.
+- Ruff lint, formatting, and diff whitespace checks pass. Verified all 32 package payloads and byte-identical rebuilds. SHA-256: `e9483ac9934eed17bc7ce6c9f507d91fce5acd8d02c7e0acc04d9bc6828143cd`. Reports are retained under `docs/v0.6.0-*`.
+- The package is installed only in the disposable test profile. Automatic approval review rejected the proposed shared-installation update because that target requires explicit user authorization. The normal LibreOffice installation has not been updated.
+
+### Exclusive English checking
+
+- The user selected LibreHarp for both English checks and right-click actions. Added opt-in menu commands to select LibreHarp as the proofreader and disable competing spelling providers for its five supported English dialects. Automatic checking stays enabled.
+- Provider settings apply across the LibreOffice profile, so the change also disables native English spelling for these dialects in Calc and Impress. LibreHarp runs in Writer. This limitation is stated in the README and was explained before requesting installation approval.
+- The first activation atomically saves the previous provider selections and automatic-check flags. Repeated activation preserves this restore point. Restore previous English checkers recovers it. Invalid restore data leaves the current settings intact.
+- Installed-component tests verify configuration, unrelated-language preservation, restart persistence, document/sibling spelling isolation, restoration, and malformed-backup protection. The normal profile remains unchanged pending authorization for the shared installation.
+
+### Version 0.6.0 approved installation
+
+- After explicit user approval, upgraded the existing shared LibreOffice installation to 0.6.0 and verified all 32 installed payload hashes.
+- Enabled exclusive English checking through the installed menu action in the normal profile. Verified all five supported dialects, automatic checking, unrelated-language preservation, and persistence after restarting LibreOffice. The proofreader, protocol handler, and sidebar factory load successfully.
+- The personal preference file remains byte-for-byte unchanged. Its SHA-256 is `a806fc731f583496f0e524e8640f7c14bcea1a15d27eb126dd4c57696a8bb649`. Previous checker choices are saved in the normal profile for Restore previous English checkers. Closed only the verification instances created for this installation.
+- Installation evidence is retained in `docs/v0.6.0-installation-report.json`.
+
+### Version 0.6.1 technical vocabulary
+
+- Existing remembered words now suppress exact `SpellCheck` and `SplitWords` findings. Accepting `homonuclear` or `radiofrequency` preserves spacing checks for other words and all other grammar checks. Capitalization remains exact; `Homonuclear` can be accepted separately.
+- Sidebar, review, and context-menu dictionary actions accept split-word findings with the same scope and stale-text protections as spelling actions. No existing rule settings or vocabulary entries are rewritten.
+- Added **Add word list...** to the vocabulary editor. One word per line merges into the selected personal, document, or project vocabulary. Blank lines and duplicates are removed; invalid input is rejected before any save. Closing the parent editor also closes its bulk-entry windows.
+- Passed 39 unit/engine tests and 81 LibreOffice checks: 28 baseline, 17 technical-vocabulary, 16 sidebar-action, and 20 context-menu checks. Inspected the native bulk-entry dialog. Ruff lint, formatting, and whitespace checks pass.
+- Verified all 33 package payloads and a byte-identical rebuild. SHA-256: `abcb97113da059336edfa32bd8d78e0a7f976e4a2821aa43ba4e1c40ce42763f`. Versioned reports are retained under `docs/v0.6.1-*`.
+- Upgraded the previously approved shared installation to 0.6.1. Verified installed component loading and all payload hashes. Personal preferences, the checker-restoration backup, and existing exclusive English checking were preserved. Evidence is in `docs/v0.6.1-installation-report.json`.
+
+
+## Version 0.6.2 final
+
+- Grouped the right-click menu under Replace, Remember word, and Disable rule. Unicode `├─` and `└─` branches keep all actions visible and directly clickable. Explanations use the existing sidebar. The separate suggestion-card implementation is removed.
+- Group headings use callbacks that change nothing because Writer hides rows with empty commands. Scoped actions retain their document and finding bindings, stale-text checks, and existing persistence behavior.
+- Replaced the synthetic spelling example with “You will recieve a confirmation email.” followed by “You will receive a confirmation email.” The existing engine-backed example checks validate the correction.
+- Consolidated the uncommitted release work into final version 0.6.2. Superseded packages and reports are retained only in the ignored local test archive. The repository had no existing 0.6.2 tag or commit to rewrite.
+- Passed 39 Python tests and 80 LibreOffice checks for the final package. Rebuilding produced identical bytes. Installed the final 0.6.2 in the shared LibreOffice installation and verified all payloads and component loading. Personal preferences, checker-restoration data, and English checker choices are unchanged. Final release evidence is in `docs/v0.6.2-*`.

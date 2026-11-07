@@ -4,6 +4,18 @@
     <node oor:name="org.libreharp.Menu" oor:op="replace">
       <prop oor:name="Title" oor:type="xs:string"><value xml:lang="en-US">LibreHarp</value></prop>
       <node oor:name="Submenu">
+        <node oor:name="english" oor:op="replace">
+          <prop oor:name="Title"><value xml:lang="en-US">Use LibreHarp for English checking</value></prop>
+          <prop oor:name="URL"><value>org.libreharp:english</value></prop>
+          <prop oor:name="Target"><value>_self</value></prop>
+          <prop oor:name="Context"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
+        <node oor:name="restore-english" oor:op="replace">
+          <prop oor:name="Title"><value xml:lang="en-US">Restore previous English checkers</value></prop>
+          <prop oor:name="URL"><value>org.libreharp:restore-english</value></prop>
+          <prop oor:name="Target"><value>_self</value></prop>
+          <prop oor:name="Context"><value>com.sun.star.text.TextDocument</value></prop>
+        </node>
         <node oor:name="migrate" oor:op="replace">
           <prop oor:name="Title"><value xml:lang="en-US">Import from LibreHarper…</value></prop>
           <prop oor:name="URL"><value>org.libreharp:migrate</value></prop>

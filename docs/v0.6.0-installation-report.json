@@ -1,0 +1,20 @@
+{
+  "version": "0.6.0",
+  "checks": [
+    "Personal preferences match the pre-install checksum",
+    "Installed component loads: org.libreharp.Proofreader",
+    "Installed component loads: org.libreharp.ProtocolHandler",
+    "Installed component loads: org.libreharp.SidebarFactory",
+    "Installed English-only menu action resolves",
+    "English-only checking enabled for all five supported dialects",
+    "Previous checker choices saved for restoration",
+    "Unrelated language providers preserved",
+    "English-only mode persists after restart",
+    "Installed proofreader loads after restart",
+    "Words and personal preferences remain byte-for-byte unchanged"
+  ],
+  "preferences_sha256": "a806fc731f583496f0e524e8640f7c14bcea1a15d27eb126dd4c57696a8bb649",
+  "passed": true,
+  "installed_payload_files_verified": 32,
+  "installed_path": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/share/uno_packages/cache/uno_packages/lu222260841mk93.tmp_/LibreHarp_v0.6.0.oxt"
+}

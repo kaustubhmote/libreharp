@@ -75,3 +75,27 @@ Automated regression suites use an isolated profile. The authorized shared insta
 - [x] Preselect a global dictionary action for spelling findings and expose Add globally as a one-click button, independent of the scope selector.
 - [x] Retain explicit document/project word actions and refuse stale spelling findings.
 - [x] Verify native actions, persistence, keyboard navigation, and large-font layout; package, install, and commit the patch release.
+
+## Version 0.6.0 context menus
+
+- [x] Replace Writer spelling and grammar popup actions with LibreHarp actions for English findings.
+- [x] Offer suggestions, temporary ignore, global words, document/project words, and scoped rule disabling.
+- [x] Keep actions bound to their original document and reject stale paragraphs.
+- [x] Mirror personal words to Writer without changing its configured checking services.
+- [x] Verify installed popup actions, restart persistence, and existing sidebar/scope behavior in isolated profiles.
+
+- [x] Add opt-in exclusive English checking with durable provider backup and restoration.
+- [x] Verify that exclusive checking and restoration survive restart and preserve unrelated language providers.
+
+## Version 0.6.1 technical vocabulary
+
+- [x] Apply exact-word exceptions to spelling and word-splitting findings without disabling either rule.
+- [x] Expose global and scoped word acceptance for split-word findings in the sidebar, review window, and context menu.
+- [x] Add bulk vocabulary entry for personal, document, and project scopes with validated, atomic merging.
+- [x] Verify compound acceptance, unrelated errors, stale actions, scope isolation, dialog lifecycle, and restart persistence.
+
+## Version 0.6.2 grouped menu
+
+- [x] Group context actions with Unicode tree branches and direct scope choices.
+- [x] Use the existing sidebar for explanations and remove the separate suggestion card.
+- [x] Use a common misspelling in the spelling-rule example and check it with Harper.

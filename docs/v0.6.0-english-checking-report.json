@@ -1,0 +1,20 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "Installed action selects LibreHarp and disables duplicate spelling for all supported dialects",
+    "English takeover enables automatic spelling and grammar feedback",
+    "Previous providers and automatic-check choices are saved",
+    "Other languages and unsupported English dialects retain their providers",
+    "Repeating takeover preserves the original restore point",
+    "Invalid restore data preserves current checker choices",
+    "Exclusive English checking survives LibreOffice restart",
+    "LibreHarp still reports both spelling and grammar with native English spelling disabled",
+    "Document acceptance removes its LibreHarp spelling finding",
+    "Document acceptance leaves the identical sibling flagged",
+    "No native English provider remains to add a duplicate underline",
+    "Restore action recovers the exact previous configuration",
+    "Restored providers survive LibreOffice restart"
+  ],
+  "errors": [],
+  "passed": true
+}

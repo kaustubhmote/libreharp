@@ -1,0 +1,18 @@
+{
+  "version": "0.6.1",
+  "unit_engine_tests": 39,
+  "libreoffice_checks": {
+    "baseline": 28,
+    "technical-vocabulary": 17,
+    "sidebar-actions": 16,
+    "context-menu": 20
+  },
+  "sha256": "abcb97113da059336edfa32bd8d78e0a7f976e4a2821aa43ba4e1c40ce42763f",
+  "payload_files": 33,
+  "reproducible": true,
+  "limitations": [
+    "Validated on Linux x86-64 with LibreOffice 26.8.",
+    "Vocabulary matching remains case-sensitive and suppresses only SpellCheck and SplitWords findings."
+  ],
+  "installation": "Upgraded the previously approved shared installation. All 33 installed payload hashes match, installed components load, exclusive English checking remains enabled, and personal preferences and checker-restoration backup remain byte-for-byte unchanged."
+}

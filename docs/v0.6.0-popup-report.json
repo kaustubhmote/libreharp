@@ -1,0 +1,17 @@
+{
+  "libreoffice_program": "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program",
+  "checks": [
+    "Installed grammar popup dispatch applies its suggestion",
+    "Installed popup replacement is undoable",
+    "Installed spelling popup adds a word globally",
+    "Global popup word is accepted by Writer's dictionary",
+    "Installed Ignore once leaves text and persistent rules unchanged",
+    "Both repeated misspellings have native underlines",
+    "Ignore once removes only the clicked spelling underline",
+    "Installed popup actions produce no component exceptions",
+    "Popup global word survives restart",
+    "Writer dictionary is rebuilt from persisted LibreHarp words"
+  ],
+  "errors": [],
+  "passed": true
+}

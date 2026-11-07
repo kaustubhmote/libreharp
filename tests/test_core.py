@@ -59,6 +59,43 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(engine.calls, 2)
         self.assertEqual(Store(self.tmp.name).read()["words"], ["Nmrprobe"])
 
+    def test_menu_cache_does_not_start_or_wait_for_engine(self):
+        engine = FakeEngine()
+        checker = Checker(self.store, engine)
+        self.assertIsNone(checker.cached("Nmrprobe"))
+        self.assertEqual(engine.calls, 0)
+        checker.check("Nmrprobe")
+        cached = checker.cached("Nmrprobe")
+        cached[0]["text"] = "changed"
+        self.assertEqual(checker.cached("Nmrprobe")[0]["text"], "Nmrprobe")
+        acquired, release = threading.Event(), threading.Event()
+
+        def hold():
+            with checker.lock:
+                acquired.set()
+                release.wait(2)
+
+        worker = threading.Thread(target=hold)
+        worker.start()
+        acquired.wait(2)
+        try:
+            self.assertIsNone(checker.cached("Nmrprobe"))
+        finally:
+            release.set()
+            worker.join()
+        self.store.add_word("Nmrprobe")
+        self.assertIsNone(checker.cached("Nmrprobe"))
+
+    def test_first_result_is_cached_under_resolved_engine_version(self):
+        class StartingEngine(FakeEngine):
+            def check(self, text, settings):
+                self.version = "resolved"
+                return super().check(text, settings)
+
+        checker = Checker(self.store, StartingEngine())
+        issues = checker.check("Nmrprobe")
+        self.assertEqual(checker.cached("Nmrprobe"), issues)
+
     def test_atomic_concurrent_updates(self):
         threads = [
             threading.Thread(target=Store(self.tmp.name).add_word, args=(f"word{i}",)) for i in range(12)
@@ -211,6 +248,41 @@ class RealEngineTests(unittest.TestCase):
             any(
                 i["rule"] == "SpellCheck" and i["text"] == "Qzxnmrspectroprobe"
                 for i in self.checker.check(text)
+            )
+        )
+
+    def test_accepted_compounds_keep_other_splitting_and_grammar_checks(self):
+        text = "We used homonuclear decoupling and radiofrequency pulses inthe experiment. This is a example."
+        before = self.checker.check(text)
+        self.assertEqual(
+            {i["text"] for i in before if i["rule"] == "SplitWords"},
+            {"homonuclear", "radiofrequency", "inthe"},
+        )
+        self.store.add_word("homonuclear")
+        self.store.add_word("radiofrequency")
+        after = self.checker.check(text)
+        self.assertEqual({i["text"] for i in after if i["rule"] == "SplitWords"}, {"inthe"})
+        self.assertTrue(any(i["rule"] == "AnA" for i in after))
+        self.assertEqual(self.store.read()["rules"], {})
+        other = Checker(Store(self.tmp.name), self.engine)
+        self.assertEqual(other.check(text), after)
+        self.store.update(lambda data: data.update(words=["radiofrequency"]))
+        self.assertTrue(any(i["text"] == "homonuclear" for i in self.checker.check(text)))
+
+    def test_scoped_compound_acceptance_is_exact_and_isolated(self):
+        text = "We used homonuclear decoupling and radiofrequency pulses."
+        scoped = {"schema": 1, "rules": {}, "words": ["homonuclear"], "terms": []}
+        result = self.checker.check(text, overrides=scoped)
+        self.assertFalse(any(i["text"] == "homonuclear" for i in result))
+        self.assertTrue(any(i["text"] == "radiofrequency" for i in result))
+        self.assertTrue(any(i["text"] == "homonuclear" for i in self.checker.check(text)))
+        result = self.checker.check("Homonuclear coupling is strong.", overrides=scoped)
+        self.assertTrue(any(i["text"] == "Homonuclear" for i in result))
+        scoped["words"].append("Homonuclear")
+        self.assertFalse(
+            any(
+                i["text"] == "Homonuclear"
+                for i in self.checker.check("Homonuclear coupling is strong.", overrides=scoped)
             )
         )
 

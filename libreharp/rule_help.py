@@ -33,8 +33,8 @@ HELP = {
         "Harper does not recognize this spelling in the selected dialect. Check the replacement, "
         "or use More actions > Remember word for a valid name or technical term. "
         "Remembered words are case-sensitive.",
-        "The qzxnmrspectroprobe is ready.",
-        "The instrument is ready.",
+        "You will recieve a confirmation email.",
+        "You will receive a confirmation email.",
     ),
     "OxfordComma": (
         "This style uses a comma before the final 'and' or 'or' in a list of three or more items. "

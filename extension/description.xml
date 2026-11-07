@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <description xmlns="http://openoffice.org/extensions/description/2006" xmlns:xlink="http://www.w3.org/1999/xlink">
   <identifier value="org.libreharp"/>
-  <version value="0.5.1"/>
+  <version value="0.6.2"/>
   <platform value="linux_x86_64"/>
   <display-name><name lang="en">LibreHarp</name></display-name>
   <publisher><name lang="en">LibreHarp contributors</name></publisher>

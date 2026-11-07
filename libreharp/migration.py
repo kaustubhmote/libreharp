@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .catalog import load_catalog
+from .vocabulary import parse_words
 
 LEGACY_PROPERTY = "WriterAgentGrammarCache"
 
@@ -31,7 +32,4 @@ def word_list(path):
     path = Path(path)
     if path.stat().st_size > 2_000_000:
         raise ValueError("Dictionary exceeds the 2 MB import limit.")
-    words = [line.strip() for line in path.read_text(encoding="utf-8-sig").splitlines() if line.strip()]
-    if any(any(c.isspace() for c in word) or "/" in word for word in words):
-        raise ValueError("Choose a plain UTF-8 word list with one word per line, without affix flags.")
-    return sorted(set(words))
+    return parse_words(path.read_text(encoding="utf-8-sig"))

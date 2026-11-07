@@ -6,6 +6,7 @@ import threading
 from collections import OrderedDict
 
 from .store import fingerprint
+from .vocabulary import is_word_finding
 
 DIALECTS = {"US": "American", "GB": "British", "AU": "Australian", "CA": "Canadian", "IN": "Indian"}
 
@@ -16,6 +17,17 @@ class Checker:
         self.cache = OrderedDict()
         self.lock = threading.RLock()
         self.status = "Ready"
+
+    def cached(self, text, country="US", overrides=None):
+        """Read completed results without waiting for the engine on the UI thread."""
+        prefs = self.store.effective(overrides)
+        key = fingerprint([text, country, prefs, self.engine.version])
+        if not self.lock.acquire(blocking=False):
+            return None
+        try:
+            return copy.deepcopy(self.cache.get(key))
+        finally:
+            self.lock.release()
 
     def check(self, text, country="US", overrides=None):
         with self.lock:
@@ -40,8 +52,7 @@ class Checker:
                 issues = [
                     i
                     for i in issues
-                    if prefs["rules"].get(i["rule"], True)
-                    and not (i["rule"] == "SpellCheck" and i["text"] in words)
+                    if prefs["rules"].get(i["rule"], True) and not (is_word_finding(i) and i["text"] in words)
                 ]
                 for term in prefs["terms"]:
                     rule = "LibreHarp.Term." + fingerprint(term)[:12]
@@ -73,6 +84,8 @@ class Checker:
                                 }
                             )
                 issues.sort(key=lambda i: (i["start"], i["end"], i["rule"]))
+                # Starting the engine resolves its version on the first check.
+                key = fingerprint([text, country, prefs, self.engine.version])
                 self.cache[key] = copy.deepcopy(issues)
                 while len(self.cache) > 256:
                     self.cache.popitem(last=False)

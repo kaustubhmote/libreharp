@@ -3,6 +3,7 @@
 from .scopes import PROJECT_FILE, ScopeTarget, local_path, project_path
 from .store import fingerprint
 from .uno_app import RuleBrowser, Settings, Window
+from .vocabulary import parse_words
 
 
 class ScopedSettings(Window):
@@ -228,6 +229,7 @@ class Vocabulary(Window):
         self.add("replacement", "Edit", 270, 202, 152, 15, HelpText="Preferred replacement")
         self.button("add_word", "Add word", 8, 202, 96, self.add_word)
         self.button("remove_word", "Remove word", 110, 202, 98, self.remove_word)
+        self.button("word_list", "Add word list...", 8, 224, 200, lambda: BulkWords(self).show())
         self.button("add_term", "Add or update", 220, 222, 100, self.add_term)
         self.button("remove_term", "Remove term", 326, 222, 96, self.remove_term)
         self.button("close", "Close", 8, 246, 96, self.close)
@@ -244,6 +246,12 @@ class Vocabulary(Window):
 
     def read(self):
         return self.target.read() if self.target else self.app.store.read()
+
+    def close(self):
+        for window in tuple(self.app.windows):
+            if isinstance(window, BulkWords) and window.parent is self:
+                window.close()
+        super().close()
 
     def update(self, change):
         if self.target:
@@ -295,3 +303,54 @@ class Vocabulary(Window):
             raise ValueError("Select a terminology rule.")
         find = self.terms[index]["find"]
         self.update(lambda d: d.update(terms=[t for t in d.get("terms", []) if t["find"] != find]))
+
+
+class BulkWords(Window):
+    """Merge pasted vocabulary into the fixed scope of its parent editor."""
+
+    def __init__(self, parent):
+        super().__init__(parent.app, "LibreHarp - add word list", 430, 285)
+        self.parent, self.target = parent, parent.target
+        self.add(
+            "context",
+            "FixedText",
+            8,
+            6,
+            414,
+            30,
+            Label=parent.model.getByName("context").Label,
+        )
+        self.add(
+            "instructions",
+            "FixedText",
+            8,
+            40,
+            414,
+            30,
+            Label="Paste one word per line. Spelling and capitalization are exact. Existing words are kept; other grammar checks remain active.",
+        )
+        self.add("word_list", "Edit", 8, 76, 414, 135, MultiLine=True, VScroll=True)
+        self.button("add_words", "Add words", 8, 220, 110, self.save)
+        self.button("close", "Close", 312, 220, 110, self.close)
+        self.add("status", "FixedText", 8, 244, 414, 32, Label="Ready")
+
+    def save(self):
+        words = parse_words(self.model.getByName("word_list").Text)
+        if not words:
+            raise ValueError("Paste at least one word, with one word per line.")
+
+        def merge(data):
+            data["words"] = sorted(set(data.get("words", [])) | set(words))
+
+        if self.target:
+            self.target.update(merge)
+        else:
+            self.app.store.update(merge)
+            self.app.changed()
+        if not self.parent.closed:
+            self.parent.refresh()
+        self.model.getByName("word_list").Text = ""
+        self.status(
+            f"Accepted {len(words)} unique words in this scope."
+            + (" Save the document to keep them." if self.target and self.target.kind == "document" else "")
+        )

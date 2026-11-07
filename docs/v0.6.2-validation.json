@@ -1,0 +1,21 @@
+{
+  "version": "0.6.2",
+  "status": "final",
+  "unit_tests": 39,
+  "libreoffice_checks": {
+    "baseline": 28,
+    "context-menu": 23,
+    "popup": 12,
+    "technical-vocabulary": 17
+  },
+  "total_libreoffice_checks": 80,
+  "package_sha256": "a4ef4a12b6abc02d782e83b8e5c17fdf8fd5361ea220f1c05c7ad1c89cbc3564",
+  "deterministic_rebuild": true,
+  "lint": "passed",
+  "format": "passed",
+  "spelling_example": {
+    "before": "You will recieve a confirmation email.",
+    "after": "You will receive a confirmation email."
+  },
+  "suggestion_card_included": false
+}

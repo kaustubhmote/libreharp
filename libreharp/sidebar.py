@@ -13,6 +13,7 @@ from .checker import replacement_is_current
 from .rule_help import finding_text
 from .scopes import ScopeTarget
 from .uno_app import Action, Callback, Modify, Review, RuleBrowser, Selection, runtime, service
+from .vocabulary import is_word_finding
 
 FACTORY = "org.libreharp.SidebarFactory"
 RESOURCE = "private:resource/toolpanel/LibreHarpPanel"
@@ -393,7 +394,7 @@ class SidebarReview(Review):
 
     def refresh_actions(self, issue=None):
         actions = []
-        spelling = issue is not None and issue["rule"] == "SpellCheck"
+        spelling = is_word_finding(issue)
         if spelling:
             actions.append(("Add word globally", self.global_word))
         if issue is not None:
@@ -448,8 +449,8 @@ class SidebarReview(Review):
 
     def spelling_word(self):
         _, (paragraph, original, issue) = self.selected()
-        if issue["rule"] != "SpellCheck":
-            raise ValueError("Select a spelling finding to remember a word.")
+        if not is_word_finding(issue):
+            raise ValueError("Select a spelling or word-splitting finding to remember a word.")
         if not replacement_is_current(original, paragraph.String, issue):
             self.check()
             raise ValueError("This paragraph changed. Check again before remembering its word.")
