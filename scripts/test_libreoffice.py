@@ -1,11 +1,12 @@
 """Install and exercise the actual OXT in a disposable LibreOffice user profile.
 
-Run with LibreOffice's bundled Python, not the system Python. The regular user
-profile is never opened or modified. Results are written to test-zone/report.json.
+Run with Python that can import UNO. Results and the test profile live under
+LIBREHARP_TEST_ZONE or test-zone by default.
 """
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -28,12 +29,22 @@ from libreharp.uno_app import (
     paragraphs,
 )
 
-PROGRAM = Path(
-    os.environ.get(
-        "LIBREHARP_LO_PROGRAM", "/opt/software/libreoffice/lib/v26.8/extracted/opt/libreoffice26.8/program"
-    )
-)
-ZONE = ROOT / "test-zone"
+
+def program_directory():
+    if program := os.environ.get("LIBREHARP_LO_PROGRAM"):
+        return Path(program).resolve()
+    bundled = Path(sys.executable).resolve().parent
+    if (bundled / "soffice").is_file():
+        return bundled
+    if launcher := shutil.which("soffice"):
+        return Path(launcher).resolve().parent
+    raise RuntimeError("Set LIBREHARP_LO_PROGRAM to the directory containing soffice and unopkg.")
+
+
+PROGRAM = program_directory()
+LAUNCHER = os.environ.get("LIBREHARP_LO_LAUNCHER", str(PROGRAM / "soffice"))
+PACKAGE = Path(os.environ.get("LIBREHARP_TEST_PACKAGE", ROOT / "build" / f"LibreHarp_v{__version__}.oxt"))
+ZONE = Path(os.environ.get("LIBREHARP_TEST_ZONE", ROOT / "test-zone")).resolve()
 PROFILE = ZONE / "profile"
 REPORT = {"libreoffice_program": str(PROGRAM), "checks": [], "errors": []}
 process = None
@@ -52,35 +63,93 @@ def prop(name, value):
     return result
 
 
+def profile_argument():
+    if PROFILE.is_symlink() or (PROFILE / "user").is_symlink():
+        raise RuntimeError("Choose a test directory with a separate LibreOffice profile.")
+    return "-env:UserInstallation=" + PROFILE.as_uri()
+
+
+def configuration(ctx, path, *, write=False):
+    provider = ctx.ServiceManager.createInstanceWithContext(
+        "com.sun.star.configuration.ConfigurationProvider", ctx
+    )
+    kind = "ConfigurationUpdateAccess" if write else "ConfigurationAccess"
+    return provider.createInstanceWithArguments(
+        "com.sun.star.configuration." + kind, (prop("nodepath", path),)
+    )
+
+
+def skip_startup_prompts(ctx):
+    misc = configuration(ctx, "/org.openoffice.Office.Common/Misc", write=True)
+    misc.setPropertyValue("ShowTipOfTheDay", False)
+    misc.commitChanges()
+    product = configuration(ctx, "/org.openoffice.Setup/Product", write=True)
+    product.setPropertyValue("WhatsNew", False)
+    product.commitChanges()
+
+
+def about_command(ctx):
+    menus = configuration(ctx, "/org.openoffice.Office.Addons/AddonUI/OfficeMenuBar")
+    about = menus.getByName("org.libreharp.Menu").getByName("Submenu").getByName("about")
+    return about.getByName("URL")
+
+
+def about_shows_version(ctx):
+    toolkit = ctx.ServiceManager.createInstanceWithContext("com.sun.star.awt.Toolkit", ctx)
+    return any(
+        toolkit.getTopWindow(i).getProperty("Text") == f"About LibreHarp {__version__}"
+        for i in range(toolkit.getTopWindowCount())
+    )
+
+
 def start(visible=False):
     global process, desktop
     pipe = "libreharp_test_" + str(os.getpid())
     options = [] if visible else ["--headless"]
-    process = subprocess.Popen(
-        [
-            str(PROGRAM / "soffice"),
-            "-env:UserInstallation=" + PROFILE.as_uri(),
-            *options,
-            "--norestore",
-            "--nodefault",
-            "--nofirststartwizard",
-            "--accept=pipe,name=" + pipe + ";urp;StarOffice.ServiceManager",
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    command = [
+        LAUNCHER,
+        profile_argument(),
+        *options,
+        "--norestore",
+        "--nodefault",
+        "--nofirststartwizard",
+        "--accept=pipe,name=" + pipe + ";urp;StarOffice.ServiceManager",
+    ]
+    ZONE.mkdir(parents=True, exist_ok=True)
+    log = ZONE / "office.log"
+
+    def launch():
+        with log.open("ab") as output:
+            return subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT)
+
+    process = launch()
     local = uno.getComponentContext()
     resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
     deadline = time.monotonic() + 30
+    restarted = False
     while True:
         try:
             ctx = resolver.resolve("uno:pipe,name=" + pipe + ";urp;StarOffice.ComponentContext")
             break
-        except Exception:
+        except Exception as exc:
+            status = process.poll()
+            if status == 81 and not restarted:
+                # AppRun can launch soffice.bin directly. It does not handle the
+                # restart LibreOffice requests after initializing a fresh profile.
+                restarted = True
+                process = launch()
+            elif status is not None:
+                raise RuntimeError(f"LibreOffice exited with code {status}. See {log}.") from exc
             if time.monotonic() > deadline:
-                raise RuntimeError("Isolated LibreOffice did not start")
+                raise RuntimeError(f"Could not connect to isolated LibreOffice. See {log}.") from exc
             time.sleep(0.2)
+    paths = ctx.ServiceManager.createInstanceWithContext("com.sun.star.util.PathSubstitution", ctx)
+    actual = Path(uno.fileUrlToSystemPath(paths.substituteVariables("$(user)", True))).resolve()
+    if actual != PROFILE / "user":
+        raise RuntimeError(f"LibreOffice used {actual} instead of the test profile.")
     desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+    if visible:
+        skip_startup_prompts(ctx)
     return ctx
 
 
@@ -129,8 +198,8 @@ def main():
             "add",
             "--force",
             "--suppress-license",
-            "-env:UserInstallation=" + PROFILE.as_uri(),
-            str(ROOT / "build" / f"LibreHarp_v{__version__}.oxt"),
+            profile_argument(),
+            str(PACKAGE),
         ],
         capture_output=True,
         text=True,
@@ -139,6 +208,8 @@ def main():
     (ZONE / "install.log").write_text(result.stdout + result.stderr)
     record("OXT installs in isolated profile", result.returncode == 0)
     ctx = start()
+    # Persist the setting before a later visible launch initializes its welcome dialog.
+    skip_startup_prompts(ctx)
     smgr = ctx.ServiceManager
     checker = smgr.createInstanceWithContext(PROOFREADER, ctx)
     record("Installed Python UNO proofreader loads", checker is not None)
@@ -304,6 +375,10 @@ def main():
     record("Installed menu protocol resolves", dispatch is not None)
     dispatch.dispatch(url, ())
     time.sleep(0.5)
+    record("Installed Writer menu registers About", about_command(ctx) == "org.libreharp:about")
+    url.Complete, url.Path = "org.libreharp:about", "about"
+    frame.queryDispatch(url, "_self", 0).dispatch(url, ())
+    record("Installed About dialog shows the extension version", about_shows_version(ctx))
     errors = store.directory / "errors.log"
     record(
         "Installed menu dispatch has no component exceptions",

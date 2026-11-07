@@ -1,9 +1,31 @@
 """Native editors bound to the document that opened them."""
 
+import uno
+
+from .ignores import read_ignores, update_ignores
 from .scopes import PROJECT_FILE, ScopeTarget, local_path, project_path
 from .store import fingerprint
-from .uno_app import RuleBrowser, Settings, Window
-from .vocabulary import parse_words
+from .uno_app import RuleBrowser, Settings, Window, service
+from .vocabulary import export_word_list, load_word_list, parse_words
+
+
+def pick_file(ctx, *, title, pattern, default_name=None):
+    picker = service(ctx, "ui.dialogs.FilePicker")
+    mode = "FILESAVE_SIMPLE" if default_name else "FILEOPEN_SIMPLE"
+    try:
+        picker.initialize((uno.getConstantByName("com.sun.star.ui.dialogs.TemplateDescription." + mode),))
+        picker.setTitle(title)
+        picker.appendFilter("Files", pattern)
+        picker.appendFilter("All files", "*.*")
+        if default_name:
+            picker.setDefaultName(default_name)
+        if picker.execute() == 1:
+            url = picker.getSelectedFiles()[0]
+            if not url.startswith("file:"):
+                raise ValueError("Choose a local file.")
+            return uno.fileUrlToSystemPath(url)
+    finally:
+        picker.dispose()
 
 
 class ScopedSettings(Window):
@@ -195,7 +217,7 @@ class Vocabulary(Window):
     """Dedicated list controls; no JSON or delimiter syntax required."""
 
     def __init__(self, app, document=None, kind="global", project=None):
-        super().__init__(app, "LibreHarp - words and terminology", 430, 290)
+        super().__init__(app, "LibreHarp - words and terminology", 430, 315)
         self.target = ScopeTarget(app, document, kind, project) if kind != "global" else None
         self.add(
             "context",
@@ -232,12 +254,14 @@ class Vocabulary(Window):
         self.button("word_list", "Add word list...", 8, 224, 200, lambda: BulkWords(self).show())
         self.button("add_term", "Add or update", 220, 222, 100, self.add_term)
         self.button("remove_term", "Remove term", 326, 222, 96, self.remove_term)
-        self.button("close", "Close", 8, 246, 96, self.close)
+        self.button("import_words", "Import list…", 8, 246, 96, self.import_words)
+        self.button("export_words", "Export list…", 110, 246, 98, self.export_words)
+        self.button("close", "Close", 8, 268, 96, self.close)
         self.add(
             "status",
             "FixedText",
             112,
-            247,
+            269,
             310,
             35,
             Label="Use the two terminology fields for text to find and its replacement.",
@@ -283,6 +307,26 @@ class Vocabulary(Window):
             raise ValueError("Select a remembered word.")
         word = self.words[index]
         self.update(lambda d: d.update(words=[w for w in d.get("words", []) if w != word]))
+
+    def import_words(self):
+        path = pick_file(self.ctx, title="Import a Harper word list", pattern="*.txt;*.dict")
+        if path:
+            words = load_word_list(path)
+            if not words:
+                raise ValueError("The selected dictionary is empty.")
+            dialog = BulkWords(self)
+            dialog.model.getByName("word_list").Text = "\n".join(words)
+            dialog.status(f"{len(words)} words loaded. Review the list, then choose Add words to merge it.")
+            dialog.show()
+
+    def export_words(self):
+        words = self.read().get("words", [])
+        path = pick_file(
+            self.ctx, title="Export a Harper word list", pattern="*.txt", default_name="harper-dictionary.txt"
+        )
+        if path:
+            export_word_list(path, words)
+            self.status(f"Exported {len(words)} words from this scope.")
 
     def add_term(self):
         find = self.model.getByName("find").Text.strip()
@@ -354,3 +398,28 @@ class BulkWords(Window):
             f"Accepted {len(words)} unique words in this scope."
             + (" Save the document to keep them." if self.target and self.target.kind == "document" else "")
         )
+
+
+class SavedIgnores(Window):
+    def __init__(self, app, document):
+        super().__init__(app, "LibreHarp — saved ignores", 375, 215)
+        self.document = document
+        self.add("ignored", "ListBox", 8, 8, 359, 138, Dropdown=False, HelpText="Saved document ignores")
+        self.button("restore", "Restore selected finding", 8, 154, 150, self.restore)
+        self.button("close", "Close", 275, 154, 92, self.close)
+        self.add("status", "FixedText", 8, 178, 359, 28, Label="")
+        self.refresh()
+
+    def refresh(self):
+        self.entries = sorted(read_ignores(self.document).items(), key=lambda item: item[1])
+        self.model.getByName("ignored").StringItemList = tuple(label for _, label in self.entries)
+        self.model.getByName("restore").Enabled = bool(self.entries) and not self.document.isReadonly()
+        self.status(f"{len(self.entries)} saved ignores. Save the document to keep any changes.")
+
+    def restore(self):
+        index = self.dialog.getControl("ignored").getSelectedItemPos()
+        if not 0 <= index < len(self.entries):
+            raise ValueError("Select a saved ignore first.")
+        key, _ = self.entries[index]
+        update_ignores(self.app, self.document, lambda values: values.pop(key, None))
+        self.refresh()

@@ -1,5 +1,6 @@
 """Exercise the installed popup with real keyboard input in an isolated display."""
 
+import argparse
 import copy
 import json
 import re
@@ -13,6 +14,7 @@ import unohelper
 from com.sun.star.ui import XContextMenuInterceptor
 from test_accessibility import wait_for
 
+from libreharp import __version__
 from libreharp.store import DEFAULTS, Store
 
 documents = []
@@ -47,11 +49,12 @@ def key(sequence):
     time.sleep(0.2)
 
 
-def main():
+def main(keyboard_only=False):
     ctx = test.start(True)
     store = Store(test.PROFILE / "user/LibreHarp")
     store.update(lambda d: (d.clear(), d.update(copy.deepcopy(DEFAULTS))))
-    before_errors = (store.directory / "errors.log").read_text()
+    error_log = store.directory / "errors.log"
+    before_errors = error_log.read_text() if error_log.exists() else ""
     locale = uno.createUnoStruct("com.sun.star.lang.Locale", "en", "US", "")
     doc = test.desktop.loadComponentFromURL("private:factory/swriter", "_blank", 0, ())
     documents.append(doc)
@@ -67,7 +70,24 @@ def main():
         .strip()
         .splitlines()[-1]
     )
-    subprocess.run(["xdotool", "windowactivate", "--sync", xid], check=True, timeout=5)
+
+    def activate():
+        def active_window():
+            result = subprocess.run(["xdotool", "getactivewindow"], capture_output=True, text=True, timeout=5)
+            return result.stdout.strip()
+
+        if active_window() == xid:
+            return
+        subprocess.run(["xdotool", "windowactivate", xid], check=True, timeout=5)
+        if not wait_for(lambda: active_window() == xid):
+            subprocess.run(
+                ["import", "-window", "root", str(test.ZONE / "popup-focus-failure.png")],
+                check=True,
+                timeout=10,
+            )
+            raise AssertionError("The isolated Writer window did not receive focus.")
+
+    activate()
     linguistic = ctx.ServiceManager.createInstanceWithContext(
         "com.sun.star.linguistic2.LinguServiceManager", ctx
     )
@@ -80,9 +100,11 @@ def main():
         "com.sun.star.linguistic2.ProofreadingIterator", ctx
     )
 
-    def accessible_text():
+    def find_accessible(predicate):
         def walk(context, depth=0):
-            if hasattr(context, "getTextMarkupCount") and context.getText() == doc.Text.String:
+            if context is None:
+                return None
+            if predicate(context):
                 return context
             if depth < 16:
                 for index in range(min(200, context.getAccessibleChildCount())):
@@ -91,8 +113,12 @@ def main():
                         return found
             return None
 
-        result = walk(
-            doc.CurrentController.Frame.ContainerWindow.getProperty("XAccessible").getAccessibleContext()
+        accessible = doc.CurrentController.Frame.ContainerWindow.getProperty("XAccessible")
+        return walk(accessible.getAccessibleContext()) if accessible else None
+
+    def accessible_text():
+        result = find_accessible(
+            lambda c: hasattr(c, "getTextMarkupCount") and c.getText() == doc.Text.String
         )
         assert result is not None, "Document text is missing from the accessible tree"
         return result
@@ -100,7 +126,7 @@ def main():
     menu_rows = []
 
     def popup(offset, mouse=False):
-        subprocess.run(["xdotool", "windowactivate", "--sync", xid], check=True, timeout=5)
+        activate()
         time.sleep(0.3)
         # Use the installed engine through Writer, including its document handshake.
         flat = doc.getFlatParagraphIterator(2, False).getFirstPara()
@@ -191,6 +217,21 @@ def main():
     )
     doc.UndoManager.undo()
     test.record("Installed popup replacement is undoable", doc.Text.String == text)
+    if keyboard_only:
+        url = uno.createUnoStruct("com.sun.star.util.URL")
+        url.Complete, url.Protocol, url.Path = test.about_command(ctx), "org.libreharp:", "about"
+        frame = doc.CurrentController.Frame
+        frame.queryDispatch(url, "_self", 0).dispatch(url, ())
+        test.record(
+            "Writer shows the About version on screen", wait_for(lambda: test.about_shows_version(ctx))
+        )
+        key("Escape")
+        return
+    if not doc.CurrentController.Frame.ContainerWindow.getProperty("XAccessible"):
+        reason = "Writer exposes no accessibility tree for targeting mouse actions in this build."
+        test.REPORT["skipped"] = reason
+        print("SKIP", reason, flush=True)
+        return
     result = popup(text.index("Qzx"), mouse=True)
     subprocess.run(["import", "-window", "root", str(test.ZONE / "context-menu.png")], check=True, timeout=10)
     choose("Globally", "Remember word")
@@ -225,9 +266,67 @@ def main():
         "Ignore once removes only the clicked spelling underline",
         wait_for(lambda: accessible_text().getTextMarkupCount(1) == 1),
     )
+    sentence, word = "The Qzxsidebarprobe works.", "Qzxsidebarprobe"
+    doc.Text.String = " ".join([sentence] * 3)
+    sidebar = doc.CurrentController.Sidebar
+    sidebar.setVisible(False)
+
+    def shows_occurrence(number):
+        details = find_accessible(lambda c: c.getAccessibleName() == "Finding explanation and context")
+        marked = sentence.replace(word, f"[{word}]")
+        expected = " ".join(marked if index == number else sentence for index in range(1, 4))
+        return details is not None and expected in details.getText()
+
+    popup(len(sentence) + 1 + sentence.index(word), mouse=True)
+    choose("Open sidebar")
+    test.record(
+        "Opening a closed sidebar selects the clicked spelling occurrence",
+        wait_for(lambda: shows_occurrence(2)),
+    )
+    popup(2 * (len(sentence) + 1) + sentence.index(word), mouse=True)
+    choose("Open sidebar")
+    test.record(
+        "Opening an already visible sidebar selects the new spelling occurrence",
+        wait_for(lambda: shows_occurrence(3)),
+    )
+    menu_role = uno.getConstantByName("com.sun.star.accessibility.AccessibleRole.MENU")
+    libreharp_menu = find_accessible(
+        lambda context: (
+            context.getAccessibleRole() == menu_role and context.getAccessibleName() == "LibreHarp"
+        )
+    )
+    assert libreharp_menu is not None, "LibreHarp is missing from the Writer menu bar"
+    about_item = next(
+        context
+        for index in range(libreharp_menu.getAccessibleChildCount())
+        if (context := libreharp_menu.getAccessibleChild(index).getAccessibleContext())
+        and context.getAccessibleName() == "About LibreHarp…"
+    )
+    about_item.doAccessibleAction(0)
+    toolkit = ctx.ServiceManager.createInstanceWithContext("com.sun.star.awt.Toolkit", ctx)
+
+    def about_shows_version():
+        for index in range(toolkit.getTopWindowCount()):
+            window = toolkit.getTopWindow(index)
+            if not hasattr(window, "getProperty"):
+                continue
+            accessible = window.getProperty("XAccessible")
+            if accessible is None:
+                continue
+            context = accessible.getAccessibleContext()
+            if context is None or context.getAccessibleName() != f"About LibreHarp {__version__}":
+                continue
+            for child_index in range(context.getAccessibleChildCount()):
+                child = context.getAccessibleChild(child_index).getAccessibleContext()
+                if child.getAccessibleName() == f"LibreHarp {__version__}":
+                    return True
+        return False
+
+    test.record("Writer's About menu shows the installed extension version", wait_for(about_shows_version))
+    key("Escape")
     test.record(
         "Installed popup actions produce no component exceptions",
-        (store.directory / "errors.log").read_text() == before_errors,
+        (error_log.read_text() if error_log.exists() else "") == before_errors,
     )
     doc.close(True)
     test.stop()
@@ -252,9 +351,13 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--keyboard-only", action="store_true", help="Exercise the keyboard popup and About dialog"
+    )
     code = 0
     try:
-        main()
+        main(parser.parse_args().keyboard_only)
     except Exception:
         code = 1
         test.REPORT["errors"].append(traceback.format_exc())

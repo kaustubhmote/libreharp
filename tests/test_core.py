@@ -199,7 +199,9 @@ class CoreTests(unittest.TestCase):
 class RealEngineTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.engine = Engine(Path(__file__).resolve().parents[1] / "vendor/harper/harper-ls")
+        from libreharp.bundled import engine_directory
+
+        cls.engine = Engine(engine_directory() / "harper-ls")
 
     @classmethod
     def tearDownClass(cls):

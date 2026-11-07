@@ -9,6 +9,9 @@ import tempfile
 import threading
 from pathlib import Path
 
+from .advanced import advanced_options
+from .weir import validate_rules
+
 DEFAULTS = {
     "schema": 1,
     "profile": "General",
@@ -50,6 +53,8 @@ class Store:
     def validate(data):
         if not isinstance(data, dict) or data.get("schema") != 1:
             raise ValueError("Unsupported preference format; no settings were changed.")
+        advanced_options(data.get("advanced", {}))
+        validate_rules(data.get("weir", {}))
         if not isinstance(data.get("profiles"), dict) or data.get("profile") not in data["profiles"]:
             raise ValueError("Choose an existing profile.")
         if any(
@@ -158,6 +163,7 @@ class Store:
             "terms": data["terms"],
             "dialect": profile["dialect"],
             "sentence_limit": profile["sentence_limit"],
+            "weir": data.get("weir", {}),
         }
         if overrides:
             result["rules"].update(overrides.get("rules", {}))
@@ -168,4 +174,9 @@ class Store:
             for key in ("dialect", "sentence_limit"):
                 if key in overrides:
                     result[key] = overrides[key]
+        if result["sentence_limit"]:
+            result["rules"]["LongSentences"] = False
         return result
+
+    def advanced(self):
+        return advanced_options(self.read().get("advanced", {}))

@@ -22,6 +22,18 @@ NAMES = {
     "terms": "Preferred terminology",
     "path": "Preferences import or export file",
     "search": "Search grammar rules",
+    "category": "Rule category",
+    "enabled": "Effective rule state",
+    "subset": "Rule subset",
+    "delay_ms": "Sidebar recheck delay in milliseconds",
+    "max_bytes": "Maximum UTF-8 bytes per English text run",
+    "severity": "Diagnostic severity",
+    "exclude": "Document exclusion patterns",
+    "ignored": "Saved document ignores",
+    "counts": "Action counts by rule",
+    "saved": "Saved Weir rules",
+    "rule_name": "Weir rule name",
+    "source": "Weir source code",
     "detail": "Rule explanation and effective settings",
     "folder": "Project folder",
     "word": "Word to remember",
@@ -44,6 +56,8 @@ ORDERS = {
         "add_word",
         "remove_word",
         "word_list",
+        "import_words",
+        "export_words",
         "terms",
         "find",
         "replacement",
@@ -70,6 +84,8 @@ def focused(control):
     flag = uno.getConstantByName("com.sun.star.accessibility.AccessibleStateType.FOCUSED")
 
     def walk(context, depth=0):
+        if context is None:
+            return False
         if context.getAccessibleStateSet() & flag:
             return True
         return depth < 3 and any(

@@ -4,4 +4,7 @@ __pycache__/
 .ruff_cache/
 build/
 test-zone/
-vendor/harper/harper-ls
+vendor/harper/releases/*/harper-ls
+vendor/harper/releases/*/*.download
+vendor/harper/selected.json.tmp
+weir-bridge/target/

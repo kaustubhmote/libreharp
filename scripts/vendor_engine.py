@@ -1,21 +1,26 @@
 """Restore the pinned official engine with archive and executable verification."""
 
+import argparse
 import hashlib
 import io
 import json
+import sys
 import tarfile
 import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEST = ROOT / "vendor/harper"
+sys.path.insert(0, str(ROOT))
+from libreharp.bundled import engine_directory, select_engine, verify_engine
 
 
-def main():
-    provenance = json.loads((DEST / "provenance.json").read_text())
-    binary = DEST / "harper-ls"
+def restore(version=None):
+    directory = engine_directory(version)
+    provenance = json.loads((directory / "provenance.json").read_text())
+    binary = directory / "harper-ls"
     if binary.exists() and hashlib.sha256(binary.read_bytes()).hexdigest() == provenance["binary_sha256"]:
-        print("Pinned Harper engine already verified.")
+        verify_engine(directory)
+        print(f"Harper {provenance['version']} already verified.")
         return
     url = f"https://github.com/Automattic/harper/releases/download/v{provenance['version']}/{provenance['asset']}"
     with urllib.request.urlopen(url, timeout=60) as response:
@@ -33,8 +38,18 @@ def main():
     temporary.write_bytes(executable)
     temporary.chmod(0o755)
     temporary.replace(binary)
+    verify_engine(directory)
     print(f"Verified Harper {provenance['version']}: {binary}")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", help="Restore a retained version without selecting it")
+    parser.add_argument("--select", metavar="VERSION", help="Restore, verify, and select a retained version")
+    args = parser.parse_args()
+    if args.version and args.select:
+        parser.error("Use either --version or --select")
+    restore(args.select or args.version)
+    if args.select:
+        select_engine(args.select)
+        print(f"Selected Harper {args.select}")

@@ -10,8 +10,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from libreharp import __version__
+from libreharp.bundled import PAYLOAD, WEIR_BINARY, WEIR_NOTICES
 
-target = ROOT / "build" / f"LibreHarp_v{__version__}.oxt"
+target = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "build" / f"LibreHarp_v{__version__}.oxt"
 with zipfile.ZipFile(target) as archive:
     assert archive.testzip() is None
     assert len(archive.namelist()) == len(set(archive.namelist())), "Duplicate archive entries"
@@ -20,6 +21,15 @@ with zipfile.ZipFile(target) as archive:
     for name, expected in hashes.items():
         assert not name.startswith("/") and ".." not in Path(name).parts
         assert hashlib.sha256(archive.read(name)).hexdigest() == expected, name
+    provenance = json.loads(archive.read("vendor/harper/provenance.json"))
+    engine_files = {name for name in hashes if name.startswith("vendor/harper/")}
+    expected_files = {*PAYLOAD, "provenance.json"}
+    if "weir_core_commit" in provenance:
+        expected_files.update((WEIR_BINARY, WEIR_NOTICES))
+        assert archive.getinfo(f"vendor/harper/{WEIR_BINARY}").external_attr >> 16 & 0o111
+    assert engine_files == {f"vendor/harper/{name}" for name in expected_files}
+    for name, key in PAYLOAD.items():
+        assert hashes[f"vendor/harper/{name}"] == provenance[key], name
     manifest = ET.fromstring(archive.read("META-INF/manifest.xml"))
     for entry in manifest:
         path = entry.attrib["{http://openoffice.org/2001/manifest}full-path"]

@@ -185,3 +185,39 @@ Validation reports and final counts are retained in the versioned report files u
 - Replaced the synthetic spelling example with “You will recieve a confirmation email.” followed by “You will receive a confirmation email.” The existing engine-backed example checks validate the correction.
 - Consolidated the uncommitted release work into final version 0.6.2. Superseded packages and reports are retained only in the ignored local test archive. The repository had no existing 0.6.2 tag or commit to rewrite.
 - Passed 39 Python tests and 80 LibreOffice checks for the final package. Rebuilding produced identical bytes. Installed the final 0.6.2 in the shared LibreOffice installation and verified all payloads and component loading. Personal preferences, checker-restoration data, and English checker choices are unchanged. Final release evidence is in `docs/v0.6.2-*`.
+
+## Version 0.7.0: Harper 3.1.0 and retained engines
+
+- Verified the official Harper 3.1.0 Linux x86-64 archive against GitHub's published SHA-256 digest. Bundled its matching 961-rule catalog and Apache license.
+- Moved Harper 3.0.0 into `vendor/harper/releases/3.0.0/` and added `3.1.0/`. Each directory retains provenance and checksums for the executable, catalog, and license. Executables remain ignored by Git and can be restored from pinned upstream assets.
+- Added `selected.json` and verified, atomic engine selection. Source execution resolves the selected release. Packaging flattens exactly one release into the existing runtime layout.
+- Added `build.py --harper-version 3.0.0` for a separately named rollback OXT. Built and verified both packages. The prior final 0.6.2 OXT and tag remain unchanged.
+- Extended the Unicode code-action workaround to Harper 3.1.0 after checking its upstream position-conversion code. Tested replacements after emoji on the first and subsequent lines with both engines.
+- Validation passed: 47 Python tests, 28 baseline LibreOffice checks, 23 context-menu checks, 12 installed-popup checks, and 17 vocabulary checks. Lint, formatting, package integrity, and deterministic rebuild checks passed.
+- The vocabulary test initially stalled in a remote `dictionary.clear()` call. Its source runtime and installed runtime both mirrored the same Writer dictionary. Left dictionary ownership with the installed runtime in that test; all vocabulary checks then passed.
+- Created `build/LibreHarp_v0.7.0.oxt` with Harper 3.1.0 and `build/LibreHarp_v0.7.0_harper-3.0.0.oxt` with Harper 3.0.0. Installed 0.7.0 into the existing shared LibreOffice installation after the user saved and closed LibreOffice. Verified all installed payload hashes and component loading. Personal preferences and the previous-checker backup are byte-for-byte unchanged; English checker selections and automatic checking are preserved.
+
+## Version 0.7.1: Select the clicked finding in the sidebar
+
+- The context menu passes the clicked paragraph, range, and rule to the sidebar. The sidebar selects the matching finding when its results are ready, including when several findings have identical text.
+- Reproduced the selection bug with 0.7.0. The 0.7.1 package passed 28 baseline checks and 14 installed popup checks, including right-clicking repeated misspellings with the sidebar closed and open. All 47 Python tests passed.
+- Built and verified packages with Harper 3.1.0 and 3.0.0. Installed the Harper 3.1.0 build and verified component loading, payload hashes, and preservation of personal preferences and English checker settings.
+
+## Version 0.8 Harper features
+
+- Added rule filters and advanced checking controls first and installed 0.8-dev in the disposable Writer profile. The new-rule filter compares the bundled catalog with the previous retained Harper catalog.
+- Added document-local saved ignores, scoped dictionary exchange, and opt-in local action counts. Saved ignores use their own Writer document property for compatibility with earlier LibreHarp versions. They match checked text and the finding's range.
+- Added a Weir editor with file import, syntax validation, and embedded tests. A persistent helper runs personal Weir rules with the same Harper 3.1.0 library as the default server. The helper's source commit, Cargo lockfile, and dependency notices are recorded with the build.
+- Passed 50 Python tests and 20 Writer feature checks. The baseline, context-menu, scope, popup, and vocabulary regression suites passed. Verified the final 0.8 upgrade from 0.8-dev in the disposable profile and checked both final OXT archives.
+
+## Version 0.8.1 About and LibreOffice compatibility
+
+- Writer's LibreHarp menu opens an About dialog with the extension version and the bundled Harper version.
+- Added a Linux test runner for AppImages, extracted images, and conventional installations. Each target gets a fresh test profile. The runner extracts AppImages temporarily and verifies the live UNO profile before loading a document.
+- LibreOffice 25.8.0.4, 26.2.2.2, and 26.8.1.1 each passed 106 checks, including the installed About dialog, Harper features, scopes, and keyboard popups. The standalone mouse suite is separate because the available accessibility tree differs by build. The 50 Python tests and package integrity checks also passed.
+
+## Version 0.8.2 sidebar preview colors
+
+- The sidebar underlines flagged text in red and shows the selected replacement in green and bold. The preview follows the replacement dropdown. The explanation uses the theme's text color. High-contrast themes use their own colors throughout.
+- Passed 51 Python tests. LibreOffice 25.8.0.4, 26.2.2.2, and 26.8.1.1 each passed 105 checks in fresh profiles. Checked the installed sidebar visually in light and dark GTK themes.
+- Verified all 42 files in the OXT and in the regular LibreOffice installation. The normal profile retained its preferences, personal dictionary, and English checker settings. The OXT SHA-256 is `d0e5d5c7cf23fe9a62bf780b410ab3dfa5721c4bf689099149ff8c726c801f8f`.

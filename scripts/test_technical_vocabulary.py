@@ -24,6 +24,10 @@ windows, panels, documents = [], [], []
 def main():
     ctx = test.start(visible=True)
     app = Runtime(ctx)
+    # The installed runtime owns Writer's shared dictionary. This extra runtime
+    # exercises source-level scope actions over the UNO bridge; mirroring from
+    # both runtimes can deadlock a remote dictionary.clear() notification.
+    app.context_menus.sync_words = lambda: None
     app.store.update(lambda data: (data.clear(), data.update(copy.deepcopy(DEFAULTS))))
     locale = uno.createUnoStruct("com.sun.star.lang.Locale", "en", "US", "")
     factory = ctx.ServiceManager.createInstanceWithContext(FACTORY, ctx)

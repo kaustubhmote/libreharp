@@ -161,9 +161,10 @@ class Engine:
     def check(self, text, settings):
         with self.lock:
             try:
-                if len(text.encode("utf-8")) > 120_000:
+                maximum = settings.get("maxFileLength", 120_000)
+                if len(text.encode("utf-8")) > maximum:
                     raise EngineError(
-                        "This paragraph exceeds Harper's 120 KB limit. Split it before checking."
+                        f"This paragraph exceeds Harper's {maximum / 1000:g} KB limit. Split it before checking."
                     )
                 self.settings = settings
                 self._start()
@@ -213,8 +214,8 @@ class Engine:
                     begin = offset(text, diag["range"]["start"])
                     end = offset(text, diag["range"]["end"])
                     action_range = diag["range"]
-                    if self.version.split()[-1] == "3.0.0":
-                        # Harper 3.0.0 pos_conv.rs emits UTF-16 diagnostics but reads
+                    if self.version.split()[-1] in {"3.0.0", "3.1.0"}:
+                        # Harper 3.0.0 and 3.1.0 emit UTF-16 diagnostics but read
                         # code-action positions as scalar indices. Adapt requests only;
                         # returned edits must still exactly match the UTF-16 diagnostic.
                         lines = text.splitlines(keepends=True)

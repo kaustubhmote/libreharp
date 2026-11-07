@@ -2,11 +2,13 @@
 
 import copy
 import uuid
+from dataclasses import dataclass
 
 import uno
 import unohelper
-from com.sun.star.lang import XEventListener
+from com.sun.star.lang import IllegalArgumentException, XEventListener
 from com.sun.star.ui import XContextMenuInterceptor
+from com.sun.star.uno import RuntimeException
 
 from .checker import replacement_is_current
 from .scopes import ScopeTarget, local_path
@@ -49,6 +51,41 @@ def selected_paragraph(controller):
     if end > len(original) or original[begin:end] != selected.String:
         return None
     return paragraph, original, begin, end
+
+
+def overlaps(begin, end, issue):
+    if begin == end:
+        return issue["start"] <= begin < issue["end"]
+    return max(begin, issue["start"]) < min(end, issue["end"])
+
+
+@dataclass(frozen=True)
+class SidebarTarget:
+    anchor: object
+    original: str
+    begin: int
+    end: int
+    rule: str | None = None
+
+    def matches(self, row):
+        paragraph, original, issue = row
+        if original != self.original:
+            return False
+        if self.rule is None:
+            if not overlaps(self.begin, self.end, issue):
+                return False
+        elif (issue["rule"], issue["start"], issue["end"]) != (self.rule, self.begin, self.end):
+            return False
+        # Writer can return different paragraph objects for the same range.
+        try:
+            text = paragraph.Text
+            return (
+                text == self.anchor.Text
+                and text.compareRegionStarts(paragraph.Start, self.anchor) == 0
+                and paragraph.String == original
+            )
+        except (IllegalArgumentException, RuntimeException):
+            return False
 
 
 class ContextMenus:
@@ -164,10 +201,15 @@ class Interceptor(unohelper.Base, XContextMenuInterceptor, XEventListener):
         name = container.getName()
         linguistic = name in (SPELL_MENU, GRAMMAR_MENU)
         overrides = self.app.bindings.for_document(self.document)
+        options = self.app.store.advanced()
+        if self.app.checker.skip_reason("", overrides, options):
+            return action("IGNORED")
         findings, pending = [], False
         for a, b, country in runs:
             if not (a <= begin < b and end <= b):
                 continue
+            if self.app.checker.skip_reason(original[a:b], overrides, options):
+                return action("IGNORED")
             cached = self.app.checker.cached(original[a:b], country, overrides)
             if cached is None:
                 pending = True
@@ -175,9 +217,7 @@ class Interceptor(unohelper.Base, XContextMenuInterceptor, XEventListener):
             for issue in cached:
                 issue["start"] += a
                 issue["end"] += a
-                if (begin == end and issue["start"] <= begin < issue["end"]) or (
-                    begin < end and max(begin, issue["start"]) < min(end, issue["end"])
-                ):
+                if overlaps(begin, end, issue):
                     findings.append(issue)
         if not findings and not linguistic:
             return action("IGNORED")
@@ -208,10 +248,19 @@ class Interceptor(unohelper.Base, XContextMenuInterceptor, XEventListener):
                 branch = "└─" if index == len(choices) - 1 else "├─"
                 add(menu, "  " + branch + " " + text, callback)
 
-        def sidebar():
-            from .sidebar import open_sidebar
+        def sidebar_action(issue=None):
+            target = (
+                SidebarTarget(paragraph.Start, original, issue["start"], issue["end"], issue["rule"])
+                if issue is not None
+                else SidebarTarget(paragraph.Start, original, begin, end)
+            )
 
-            open_sidebar(self.app, self.controller.Frame)
+            def show():
+                from .sidebar import open_sidebar
+
+                open_sidebar(self.app, self.controller.Frame, target=target)
+
+            return show
 
         readonly = self.document.isReadonly()
         project = bool(local_path(self.document.URL))
@@ -224,7 +273,7 @@ class Interceptor(unohelper.Base, XContextMenuInterceptor, XEventListener):
                 if issue["rule"] == "SpellCheck"
                 else issue["message"].splitlines()[0]
             )
-            add(menu, "LibreHarp: " + title[:100], sidebar)
+            add(menu, "LibreHarp: " + title[:100], sidebar_action(issue))
             if not readonly:
                 group(
                     "Replace",
@@ -251,6 +300,10 @@ class Interceptor(unohelper.Base, XContextMenuInterceptor, XEventListener):
                 rules.append(("In this project", lambda e=entry: e.disable("project")))
             rules.append(("Globally", lambda e=entry: e.disable("global")))
             group("Disable rule", rules)
+        primary = findings[0] if findings else None
+        if name == SPELL_MENU:
+            primary = next(filter(is_word_finding, findings), primary)
+        sidebar = sidebar_action(primary)
         if not findings:
             add(menu, "LibreHarp: check in sidebar" if pending else "LibreHarp: no finding here", sidebar)
         separate()
@@ -304,6 +357,7 @@ class Finding:
 
         self.validate()
         apply_replacement(self.document, self.paragraph, self.original, self.issue, replacement)
+        self.app.record("Applied", self.issue)
         self.app.changed()
 
     def word(self, scope):
@@ -318,6 +372,7 @@ class Finding:
             ScopeTarget(self.app, self.document, scope).update(
                 lambda data: data.update(words=sorted(set(data.get("words", [])) | {word}))
             )
+        self.app.record("Remembered word", self.issue)
 
     def disable(self, scope):
         self.validate()
@@ -357,6 +412,7 @@ class Finding:
             service(self.app.ctx, "frame.DispatchHelper").executeDispatch(
                 self.interceptor.controller.Frame, ".uno:SpellCheckIgnore", "", 0, (prop,)
             )
+        self.app.record("Ignored", self.issue)
         for window in tuple(self.app.windows):
             if getattr(window, "document", None) == self.document and hasattr(window, "rows"):
                 window.rows = [

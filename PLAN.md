@@ -99,3 +99,31 @@ Automated regression suites use an isolated profile. The authorized shared insta
 - [x] Group context actions with Unicode tree branches and direct scope choices.
 - [x] Use the existing sidebar for explanations and remove the separate suggestion card.
 - [x] Use a common misspelling in the spelling-rule example and check it with Harper.
+
+## Version 0.7.0 Harper update
+
+- [x] Bundle Harper 3.1.0 with its matching rule catalog and verified upstream archive.
+- [x] Retain versioned engines and metadata, with verified selection and separately named rollback builds.
+- [x] Package exactly one engine per OXT.
+- [x] Extend the Unicode-position workaround to the affected 3.1.0 server and test both retained engines.
+
+## Version 0.8 Harper features
+
+- [x] Combine rule search with category, effective state, override, and new-rule filters.
+- [x] Add advanced checking controls for recheck delay, text size, exclusions, English isolation, and diagnostic severity.
+- [x] Save document-local ignores and restore them individually. Exchange Harper dictionaries in the selected vocabulary scope.
+- [x] Count explicit actions by rule when local statistics are enabled.
+- [x] Edit, validate, and run personal Weir rules with the Harper 3.1.0 library.
+- [x] Test the combined features as 0.8-dev before building 0.8.
+
+## Version 0.8.1 About and compatibility tests
+
+- [x] Show the LibreHarp and bundled Harper versions in the Writer About dialog.
+- [x] Add a compatibility test runner for AppImages and conventional LibreOffice installations. Give each target a fresh profile.
+
+## Version 0.8.2 sidebar preview
+
+- [x] Underline flagged text in red and show the selected replacement in green and bold. Update the preview when the selection changes.
+- [x] Use theme text colors in high-contrast mode. Inspect the installed sidebar in light and dark themes.
+- [x] Pass 51 Python tests and 105 checks on each of the three LibreOffice AppImages in isolated profiles.
+- [x] Verify the OXT, install it in regular LibreOffice, and confirm that preferences and English checker settings carry over. See [the release record](WORK_LOG.md#version-082-sidebar-preview-colors).

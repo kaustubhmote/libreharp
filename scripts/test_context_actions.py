@@ -56,7 +56,7 @@ def main():
     def check(text, marker=None):
         a.Text.String = text
         click("check")
-        marker = marker or (f"[{WORD}]" if WORD in text else "[a]")
+        marker = marker or f"In your text\n{text}"
         assert wait_for(lambda: marker in model("message").Text and "suggestions" in model("status").Text)
 
     test.record(
@@ -86,7 +86,13 @@ def main():
     test.record(
         "Empty sidebar retains management actions without finding actions",
         model("more").StringItemList
-        == ("More actions...", "Grammar rules", "Document / project settings", "Words and terminology")
+        == (
+            "More actions...",
+            "Grammar rules",
+            "Document / project settings",
+            "Words and terminology",
+            "Manage saved ignores",
+        )
         and not model("run").Enabled,
     )
     store.update(lambda d: d["profiles"].update(Scientific=copy.deepcopy(d["profiles"][d["profile"]])))
@@ -102,18 +108,20 @@ def main():
             "More actions...",
             "Show in document",
             "Disable rule",
+            "Remember this ignore",
             "Grammar rules",
             "Document / project settings",
             "Words and terminology",
+            "Manage saved ignores",
         )
         and window.getControl("more").getSelectedItemPos() == 0
         and not model("run").Enabled,
     )
-    check("The ZqxVocabularyProbe works. This is a example.", "[ZqxVocabularyProbe]")
+    check("The ZqxVocabularyProbe works. This is a example.", "In your text\nThe ZqxVocabularyProbe")
     click("next")
     test.record(
         "Changing selection to grammar removes the spelling shortcut",
-        wait_for(lambda: "[a]" in model("message").Text)
+        wait_for(lambda: "Suggested replacement\nan\n" in model("message").Text)
         and "Add word globally" not in model("more").StringItemList,
     )
     click("previous")

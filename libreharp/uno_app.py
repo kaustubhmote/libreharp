@@ -12,13 +12,17 @@ from com.sun.star.lang import XInitialization, XServiceDisplayName, XServiceInfo
 from com.sun.star.linguistic2 import XLinguServiceEventBroadcaster, XProofreader
 from com.sun.star.util import XModifyListener
 
-from . import accessibility, layout
-from .catalog import load_catalog
+from . import __version__, accessibility, layout
+from .bundled import WEIR_BINARY, engine_directory, engine_metadata
+from .catalog import filter_rules, load_catalog
 from .checker import Checker, replacement_is_current
 from .engine import Engine
+from .ignores import ignore_key, update_ignores
 from .rule_help import explanation
+from .statistics import Statistics
 from .store import Store, fingerprint
 from .vocabulary import is_word_finding
+from .weir import RULE_PREFIX, WeirEngine
 
 ROOT = Path(__file__).resolve().parent.parent
 PROOFREADER = "org.libreharp.Proofreader"
@@ -40,10 +44,19 @@ class Runtime:
         self.ctx = ctx
         user = service(ctx, "util.PathSubstitution").substituteVariables("$(user)", True)
         self.store = Store(Path(uno.fileUrlToSystemPath(user)) / "LibreHarp")
-        self.engine = Engine(
-            ROOT / "vendor" / "harper" / "harper-ls", data_dir=self.store.directory / "engine"
-        )
-        self.checker = Checker(self.store, self.engine)
+        self.statistics = Statistics(self.store.directory)
+        directory = engine_directory()
+        metadata = engine_metadata(directory)
+        self.engine = Engine(directory / "harper-ls", data_dir=self.store.directory / "engine")
+        self.weir = None
+        if "weir_core_commit" in metadata:
+            bridge = (
+                ROOT / "build" / WEIR_BINARY
+                if directory.parent.name == "releases"
+                else directory / WEIR_BINARY
+            )
+            self.weir = WeirEngine(bridge)
+        self.checker = Checker(self.store, self.engine, self.weir, metadata)
         self.proofreaders = []
         self.windows = []
         from .context_menu import ContextMenus
@@ -65,6 +78,13 @@ class Runtime:
         for window in tuple(self.windows):
             if isinstance(window, Review) and not window.closed:
                 window.check()
+
+    def record(self, action, issue):
+        try:
+            if self.store.advanced()["record_statistics"]:
+                self.statistics.record(action, issue["rule"])
+        except Exception:
+            self.log_error()
 
 
 def runtime(ctx):
@@ -503,7 +523,7 @@ class Review(Window):
         self.button("disable", "Disable rule everywhere", 94, 226, 130, self.disable)
         self.button("settings", "Document settings", 230, 226, 82, self.settings)
         self.button("check", "Check document", 318, 226, 94, self.check)
-        self.add("auto", "CheckBox", 8, 249, 180, 12, Label="Recheck after edits (1 second)", State=1)
+        self.add("auto", "CheckBox", 8, 249, 180, 12, Label="Recheck after edits", State=1)
         self.button("close", "Close", 330, 248, 82, self.close)
         self.add("status", "FixedText", 8, 268, 404, 24, Label="Ready")
         document.addModifyListener(self.modify)
@@ -517,6 +537,9 @@ class Review(Window):
     def details(self):
         _, (_, _, issue) = self.selected()
         self.model.getByName("message").Text = issue["rule"] + ": " + issue["message"]
+        self.set_suggestions(issue)
+
+    def set_suggestions(self, issue):
         self.model.getByName("suggestions").StringItemList = tuple(issue["suggestions"])
         if issue["suggestions"]:
             self.dialog.getControl("suggestions").selectItemPos(0, True)
@@ -532,14 +555,14 @@ class Review(Window):
             raise ValueError("This paragraph changed. Check again to locate it.")
         self.document.CurrentController.select(paragraph)
 
-    def display(self):
+    def display(self, index=0):
         self.model.getByName("issues").StringItemList = tuple(
             f"{i + 1}. {r[2]['text'][:50]} — {r[2]['message'][:85]}" for i, r in enumerate(self.rows)
         )
         self.model.getByName("message").Text = ""
         self.model.getByName("suggestions").StringItemList = ()
         if self.rows:
-            self.dialog.getControl("issues").selectItemPos(0, True)
+            self.dialog.getControl("issues").selectItemPos(index, True)
             self.details()
 
     def apply(self):
@@ -548,6 +571,7 @@ class Review(Window):
         if choice < 0:
             raise ValueError("This finding has no selected replacement.")
         apply_replacement(self.document, paragraph, original, issue, issue["suggestions"][choice])
+        self.app.record("Applied", issue)
         self.check()
 
     def word(self):
@@ -557,6 +581,7 @@ class Review(Window):
         if not replacement_is_current(original, paragraph.String, issue):
             raise ValueError("This paragraph changed. Check again before remembering its word.")
         self.app.store.add_word(issue["text"])
+        self.app.record("Remembered word", issue)
         self.app.changed()
         self.check()
 
@@ -567,12 +592,42 @@ class Review(Window):
         self.check()
 
     def ignore(self):
-        index, _ = self.selected()
+        index, (_, _, issue) = self.selected()
         self.rows.pop(index)
+        self.app.record("Ignored", issue)
         self.display()
         self.status(
             "Ignored until the next document check. Use Disable rule everywhere for a permanent choice."
         )
+
+    def remember_ignore(self):
+        _, (paragraph, original, issue) = self.selected()
+        if not replacement_is_current(original, paragraph.String, issue):
+            raise ValueError("This paragraph changed. Check again before saving an ignore.")
+        for begin, end, _ in language_runs(paragraph):
+            if begin <= issue["start"] < issue["end"] <= end:
+                key = ignore_key(
+                    original[begin:end],
+                    {
+                        **issue,
+                        "start": issue["start"] - begin,
+                        "end": issue["end"] - begin,
+                    },
+                )
+                break
+        else:
+            raise ValueError("This finding no longer matches an English text run. Check again.")
+        label = (issue["rule"][:100] + " · " + " ".join(issue["text"].split()))[:240]
+        update_ignores(self.app, self.document, lambda values: values.update({key: label}))
+        self.app.record("Ignored", issue)
+        self.rows = [row for row in self.rows if row != (paragraph, original, issue)]
+        self.display()
+        self.status("Ignore saved in this document. Save the document to keep it after closing.")
+
+    def manage_ignores(self):
+        from .scope_ui import SavedIgnores
+
+        SavedIgnores(self.app, self.document).show()
 
     def settings(self):
         from .scope_ui import ScopedSettings
@@ -585,7 +640,8 @@ class Review(Window):
             self.timer.cancel()
         if self.closed or not self.model.getByName("auto").State:
             return
-        self.timer = threading.Timer(1, lambda: self.post(self.check))
+        delay = self.app.store.advanced()["delay_ms"] / 1000
+        self.timer = threading.Timer(delay, lambda: self.post(self.check))
         self.timer.daemon = True
         self.timer.start()
 
@@ -611,23 +667,36 @@ class Review(Window):
                 (p, p.String, language_runs(p)) for p in paragraphs(self.document) if p.String.strip()
             ]
             overrides = self.app.bindings.for_document(self.document)
+            options = self.app.store.advanced()
+            excluded = self.app.checker.skip_reason("", overrides, options)
         except Exception as exc:
             self.rows = []
             self.display()
             self.status("Check failed: " + str(exc))
+            return
+        if excluded:
+            self.rows = []
+            self.display()
+            self.status(excluded)
             return
         self.pending = True
         skipped = sum(not runs for _, _, runs in snapshot)
         self.status(f"Checking {len(snapshot)} paragraphs…")
 
         def work():
-            rows, error = [], None
+            rows, error, oversized = [], None, 0
+            warnings = set()
             try:
                 for paragraph, text, runs in snapshot:
                     if self.closed or generation != self.generation:
                         break
                     for begin, end, country in runs:
-                        for issue in self.app.checker.check(text[begin:end], country, overrides):
+                        if self.app.checker.skip_reason(text[begin:end], overrides, options):
+                            oversized += 1
+                            continue
+                        for issue in self.app.checker.check(
+                            text[begin:end], country, overrides, warnings=warnings
+                        ):
                             issue["start"] += begin
                             issue["end"] += begin
                             rows.append((paragraph, text, issue))
@@ -647,6 +716,8 @@ class Review(Window):
                     if error
                     else f"{len(rows)} suggestions · {self.app.engine.version}"
                     + (f" · {skipped} paragraphs skipped (language or fields)" if skipped else "")
+                    + (f" · {oversized} text runs exceed the size limit" if oversized else "")
+                    + (" · Weir skipped: " + " | ".join(sorted(warnings)) if warnings else "")
                 )
 
             self.post(finish)
@@ -661,6 +732,15 @@ class Review(Window):
         except Exception:
             pass
         super().close()
+
+
+class About(Window):
+    def __init__(self, app):
+        super().__init__(app, f"About LibreHarp {__version__}", 220, 83)
+        self.add("version", "FixedText", 8, 9, 204, 14, Label=f"LibreHarp {__version__}")
+        harper = engine_metadata(engine_directory())["version"]
+        self.add("engine_version", "FixedText", 8, 27, 204, 14, Label=f"Harper {harper}")
+        self.button("close", "Close", 134, 54, 78, self.close)
 
 
 class Settings(Window):
@@ -775,6 +855,7 @@ class Settings(Window):
         self.button("export", "Export saved", 260, 281, 72, self.export)
         self.button("import", "Import", 338, 281, 74, self.import_file)
         self.button("save", "Save and activate", 8, 306, 130, self.save)
+        self.button("advanced", "Advanced settings…", 148, 306, 152, self.advanced)
         self.button("close", "Close", 330, 306, 82, self.close)
         self.add(
             "status",
@@ -863,17 +944,24 @@ class Settings(Window):
         self.app.changed()
         self.status("Imported. Close and reopen Settings to edit the imported preferences.")
 
+    def advanced(self):
+        from .advanced_ui import AdvancedSettings
+
+        AdvancedSettings(self.app, self).show()
+
 
 class RuleBrowser(Window):
     """Searchable native rule controls; persisted choices apply immediately."""
 
     def __init__(self, app, document=None, initial_scope=None):
-        super().__init__(app, "LibreHarp — grammar rules", 420, 350)
+        super().__init__(app, "LibreHarp — grammar rules", 420, 375)
         self.document = document
         self.catalog = load_catalog()
         self.visible_rules = []
         self.add("search", "Edit", 8, 8, 245, 15, Text="")
         self.button("searchbutton", "Search", 260, 8, 72, self.refresh)
+        if app.weir:
+            self.button("weir", "Weir rules…", 338, 8, 74, self.edit_weir)
         self.add(
             "scope",
             "ListBox",
@@ -886,19 +974,44 @@ class RuleBrowser(Window):
             + (("This document", "Project (document folder if new)") if document else ()),
             SelectedItems=((initial_scope if initial_scope is not None else 2 if document else 0),),
         )
-        self.add("rules", "ListBox", 8, 52, 404, 100, Dropdown=False, MultiSelection=False)
+        self.filters = Selection(self, self.refresh)
+        categories = tuple(sorted({rule["category"] for rule in self.catalog if rule["category"]}))
+        if app.weir:
+            categories += ("Personal Weir rules",)
+        subsets = ("All rules", "Overrides")
+        if any(rule["new"] for rule in self.catalog):
+            subsets += ("New in bundled Harper",)
+        for name, x, width, label, items in (
+            ("category", 8, 154, "Rule category", ("All categories", *categories)),
+            ("enabled", 168, 98, "Effective rule state", ("Any state", "Enabled", "Disabled")),
+            ("subset", 272, 140, "Rule subset", subsets),
+        ):
+            self.add(
+                name,
+                "ListBox",
+                x,
+                52,
+                width,
+                16,
+                Dropdown=True,
+                StringItemList=items,
+                SelectedItems=(0,),
+                HelpText=label,
+            )
+            self.dialog.getControl(name).addItemListener(self.filters)
+        self.add("rules", "ListBox", 8, 74, 404, 100, Dropdown=False, MultiSelection=False)
         self.selection = Selection(self, self.details)
         self.dialog.getControl("rules").addItemListener(self.selection)
-        self.add("detail", "Edit", 8, 158, 404, 132, MultiLine=True, ReadOnly=True, VScroll=True)
-        self.button("enable", "Enable", 8, 296, 80, lambda: self.set(True))
-        self.button("disable", "Disable", 94, 296, 80, lambda: self.set(False))
-        self.button("reset", "Use inherited default", 180, 296, 140, lambda: self.set(None))
-        self.button("close", "Close", 330, 296, 82, self.close)
+        self.add("detail", "Edit", 8, 180, 404, 132, MultiLine=True, ReadOnly=True, VScroll=True)
+        self.button("enable", "Enable", 8, 318, 80, lambda: self.set(True))
+        self.button("disable", "Disable", 94, 318, 80, lambda: self.set(False))
+        self.button("reset", "Use inherited default", 180, 318, 140, lambda: self.set(None))
+        self.button("close", "Close", 330, 318, 82, self.close)
         self.add(
             "status",
             "FixedText",
             8,
-            320,
+            342,
             404,
             24,
             Label="Choose a scope, then enable, disable, or restore an inherited default.",
@@ -915,14 +1028,34 @@ class RuleBrowser(Window):
         return self.visible_rules[index]
 
     def refresh(self):
-        query = self.model.getByName("search").Text.casefold().strip()
+        index = self.dialog.getControl("rules").getSelectedItemPos()
+        previous = self.visible_rules[index]["name"] if 0 <= index < len(self.visible_rules) else None
         overrides = self.app.bindings.for_document(self.document) if self.document else None
         prefs = self.app.store.effective(overrides)
-        self.visible_rules = [
-            r
-            for r in self.catalog
-            if query in (r["name"] + " " + r["label"] + " " + r["category"]).casefold()
+        catalog = self.catalog + [
+            {
+                "name": RULE_PREFIX + name,
+                "label": name,
+                "category": "Personal Weir rules",
+                "default": True,
+                "description": rule["description"],
+                "alternatives": [],
+                "new": False,
+            }
+            for name, rule in sorted(prefs["weir"].items())
+            if self.app.weir
         ]
+        category = self.dialog.getControl("category").getSelectedItem()
+        enabled = self.dialog.getControl("enabled").getSelectedItem()
+        subset = self.dialog.getControl("subset").getSelectedItem()
+        self.visible_rules = filter_rules(
+            catalog,
+            prefs["rules"],
+            query=self.model.getByName("search").Text,
+            category="" if category == "All categories" else category,
+            enabled={"Enabled": True, "Disabled": False}.get(enabled),
+            subset=subset,
+        )
         self.model.getByName("rules").StringItemList = tuple(
             ("On" if prefs["rules"].get(r["name"], r["default"]) else "Off")
             + " · "
@@ -933,9 +1066,17 @@ class RuleBrowser(Window):
         )
         self.model.getByName("detail").Text = ""
         if self.visible_rules:
-            self.model.getByName("rules").SelectedItems = (0,)
+            index = next((i for i, rule in enumerate(self.visible_rules) if rule["name"] == previous), 0)
+            self.model.getByName("rules").SelectedItems = (index,)
             self.details()
-        self.status(f"{len(self.visible_rules)} of {len(self.catalog)} rules · changes are saved immediately")
+        for name in ("enable", "disable", "reset"):
+            self.model.getByName(name).Enabled = bool(self.visible_rules)
+        self.status(f"{len(self.visible_rules)} of {len(catalog)} rules · changes are saved immediately")
+
+    def edit_weir(self):
+        from .weir_ui import WeirRules
+
+        WeirRules(self).show()
 
     def details(self):
         rule = self.selected()
@@ -949,7 +1090,8 @@ class RuleBrowser(Window):
             project_settings = ProjectStore(project).read() if project else {}
             document_settings = read_document(self.document)
         profile = document_settings.get("profile", project_settings.get("profile", data["profile"]))
-        state, origin = rule["default"], "Harper default"
+        default = "Personal Weir rule" if rule["name"].startswith(RULE_PREFIX) else "Harper default"
+        state, origin = rule["default"], default
         for choices, label in (
             (data["profiles"].get(profile, {}), "profile: " + profile),
             (data, "personal global override"),
@@ -958,9 +1100,13 @@ class RuleBrowser(Window):
         ):
             if rule["name"] in choices.get("rules", {}):
                 state, origin = choices["rules"][rule["name"]], label
+        if rule["name"] == "LongSentences":
+            personal = data["profiles"].get(profile, {}).get("sentence_limit", 0)
+            if document_settings.get("sentence_limit", project_settings.get("sentence_limit", personal)):
+                state, origin = False, "custom sentence word limit"
         self.model.getByName(
             "detail"
-        ).Text = f"{rule['name']}: {'enabled' if state else 'disabled'} ({origin}).\n{rule['description']}\nHarper default: {'enabled' if rule['default'] else 'disabled'}."
+        ).Text = f"{rule['name']}: {'enabled' if state else 'disabled'} ({origin}).\n{rule['description']}\n{default}: {'enabled' if rule['default'] else 'disabled'}."
         if explanation(rule["name"]):
             self.model.getByName("detail").Text += "\n\n" + explanation(rule["name"])
 
@@ -991,11 +1137,6 @@ class RuleBrowser(Window):
             self.app.store.update(change)
         self.app.changed()
         self.refresh()
-        for index, item in enumerate(self.visible_rules):
-            if item["name"] == rule["name"]:
-                self.dialog.getControl("rules").selectItemPos(index, True)
-                self.details()
-                break
         for window in tuple(self.app.windows):
             if isinstance(window, Review):
                 window.check()
@@ -1045,7 +1186,9 @@ class ProtocolHandler(unohelper.Base, XDispatchProvider, XDispatch, XInitializat
                 if self.frame
                 else service(self.app.ctx, "frame.Desktop").getCurrentComponent()
             )
-            if url.Path == "settings":
+            if url.Path == "about":
+                About(self.app).show()
+            elif url.Path == "settings":
                 Settings(self.app).show()
             elif url.Path == "rules":
                 RuleBrowser(self.app, document).show()

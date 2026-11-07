@@ -72,23 +72,28 @@ def explanation(rule):
     return ""
 
 
-def finding_text(original, issue, number, total):
+def finding_text(original, issue, number, total, replacement):
     start, end = issue["start"], issue["end"]
     left, right = max(0, start - 140), min(len(original), end + 140)
-    context = (
-        ("..." if left else "")
-        + original[left:start]
-        + "["
-        + original[start:end]
-        + "]"
-        + original[end:right]
-        + ("..." if right < len(original) else "")
-    )
-    parts = [f"Finding {number} of {total}", issue["message"], "In your text\n" + context]
+    parts = [f"Finding {number} of {total}", issue["message"]]
+    if "severity" in issue:
+        parts.insert(1, "Severity: " + issue["severity"])
+    prefix = "\n\n".join(parts) + "\n\nIn your text\n" + ("..." if left else "") + original[left:start]
+    flagged = original[start:end] or "▏"
+    flagged_span = (len(prefix), len(prefix) + len(flagged))
+    context = prefix + flagged + original[end:right] + ("..." if right < len(original) else "")
+    parts = [context]
+    replacement_span = None
+    if replacement is not None:
+        prefix = "\n\nSuggested replacement\n"
+        fix = replacement or "Remove flagged text"
+        begin = len(context) + len(prefix)
+        replacement_span = (begin, begin + len(fix))
+        parts[0] += prefix + fix
     help_text = explanation(issue["rule"])
     if help_text:
         parts.append(help_text)
     if not issue["suggestions"]:
         parts.append("No automatic replacement. Edit the document, ignore this finding, or disable its rule.")
     parts.append("Rule: " + issue["rule"])
-    return "\n\n".join(parts)
+    return "\n\n".join(parts), flagged_span, replacement_span

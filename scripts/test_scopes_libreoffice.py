@@ -11,6 +11,7 @@ import uno
 from libreharp.scopes import ProjectStore, empty_scope, read_document, write_document
 from libreharp.sidebar import FACTORY, RESOURCE
 from libreharp.store import DEFAULTS, Store
+from libreharp.uno_app import units
 
 docs = []
 
@@ -101,10 +102,39 @@ def main():
         window.getControl("scope") is not None and window.getControl("apply") is not None,
     )
     test.record("Sidebar reports its actual document frame", panel.Frame == a.CurrentController.Frame)
+    message_control = window.getControl("message")
+    message = message_control.getModel()
+
+    def preview_span(prefix, token):
+        cursor = message.createTextCursor()
+        cursor.gotoStart(False)
+        text = message.String
+        cursor.goRight(units(text[: text.index(prefix) + len(prefix)]), False)
+        cursor.goRight(units(token), True)
+        assert cursor.String == token
+        return cursor
+
     test.record(
         "Sidebar explanation includes context and a verified rule example",
-        "This is [a] example." in window.getControl("message").getModel().Text
-        and "Before: This is a example." in window.getControl("message").getModel().Text,
+        "In your text\nThis is a example." in message.String
+        and "Before: This is a example." in message.String,
+    )
+    test.record(
+        "Sidebar shows the flagged article in red and underlined",
+        preview_span("In your text\nThis is ", "a").CharColor in (0xB3261E, 0xFF9A94)
+        and preview_span("In your text\nThis is ", "a").CharUnderline == 1,
+    )
+    test.record(
+        "Sidebar shows the selected correction in green and bold",
+        preview_span("Suggested replacement\n", "an").CharColor in (0x176B38, 0x8DDEA1)
+        and preview_span("Suggested replacement\n", "an").CharWeight == 150
+        and preview_span("In your text\n", "This").CharColor
+        == message_control.getPeer().StyleSettings.FieldTextColor,
+    )
+    accessible_name = message_control.getAccessibleContext().getAccessibleName()
+    test.record(
+        "Sidebar exposes the flagged article and selected correction to assistive tools",
+        "[flagged: a]" in accessible_name and "Suggested replacement\nan" in accessible_name,
     )
     # The previous scale case may have saved a small Writer window. Give this
     # growth fixture real parent space before asking the child to use 800 px.
@@ -184,6 +214,19 @@ def main():
                 and "Finding 2 of 2" in window.getControl("message").getModel().Text
             )
         ),
+    )
+    a.Text.String = "😀 The Resaearchers report results."
+    window.getControl("check").getAccessibleContext().doAccessibleAction(0)
+    suggestions = window.getControl("suggestions")
+    assert wait_for(lambda: "The Resaearchers report results." in message.String)
+    assert suggestions.getItemCount() > 1
+    second = suggestions.getItem(1)
+    suggestions.selectItemPos(1, True)
+    test.record(
+        "The green preview follows a different spelling suggestion after emoji in the source",
+        wait_for(lambda: f"Suggested replacement\n{second}\n" in message.String)
+        and preview_span("😀 The ", "Resaearchers").CharUnderline == 1
+        and preview_span("Suggested replacement\n", second).CharColor in (0x176B38, 0x8DDEA1),
     )
     a.Text.String = "This is a example."
     a.store()

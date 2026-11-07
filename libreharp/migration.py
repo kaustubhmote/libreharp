@@ -1,10 +1,9 @@
 """Explicit, conservative migration from LibreHarper/WriterAgent preferences."""
 
 import json
-from pathlib import Path
 
 from .catalog import load_catalog
-from .vocabulary import parse_words
+from .vocabulary import load_word_list
 
 LEGACY_PROPERTY = "WriterAgentGrammarCache"
 
@@ -29,7 +28,4 @@ def legacy_rules(raw):
 
 
 def word_list(path):
-    path = Path(path)
-    if path.stat().st_size > 2_000_000:
-        raise ValueError("Dictionary exceeds the 2 MB import limit.")
-    return parse_words(path.read_text(encoding="utf-8-sig"))
+    return load_word_list(path)

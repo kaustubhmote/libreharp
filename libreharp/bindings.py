@@ -11,6 +11,7 @@ import unohelper
 from com.sun.star.document import XDocumentEventListener
 from com.sun.star.util import XModifyListener
 
+from .ignores import read_ignores
 from .scopes import read_document, resolve
 
 
@@ -88,9 +89,10 @@ class Bindings:
                     listener = DocumentModify(self)
                     doc.addModifyListener(listener)
                     self.documents[uid] = (doc, listener)
-                snapshot = {"url": doc.URL, "settings": None, "error": None}
+                snapshot = {"url": doc.URL, "settings": None, "ignored": {}, "error": None}
                 try:
                     snapshot["settings"] = read_document(doc)
+                    snapshot["ignored"] = read_ignores(doc)
                 except ValueError as exc:
                     snapshot["error"] = str(exc)
                 identity = self.by_uid.get(uid)
@@ -142,10 +144,14 @@ class Bindings:
             return None
         if snapshot["error"]:
             raise ValueError(snapshot["error"])
-        return resolve(snapshot["url"], snapshot["settings"])[0]
+        return self.options(snapshot["url"], snapshot["settings"], snapshot["ignored"])
 
     def for_document(self, document):
-        return resolve(document.URL, read_document(document))[0]
+        return self.options(document.URL, read_document(document), read_ignores(document))
+
+    @staticmethod
+    def options(url, settings, ignored):
+        return {**resolve(url, settings)[0], "document_url": url, "ignored": ignored}
 
 
 class DocumentModify(unohelper.Base, XModifyListener):

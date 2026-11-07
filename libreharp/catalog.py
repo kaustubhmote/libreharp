@@ -1,11 +1,14 @@
 """Offline rule metadata from the exact bundled Harper release."""
 
 import json
-from pathlib import Path
+
+from .bundled import engine_directory
 
 
-def load_catalog():
-    path = Path(__file__).resolve().parent.parent / "vendor/harper/default_config.json"
+def load_catalog(directory=None):
+    directory = directory or engine_directory()
+    path = directory / "default_config.json"
+    new_rules = set(json.loads((directory / "provenance.json").read_text()).get("new_rules", []))
     result = []
 
     def walk(node, category="", description=""):
@@ -42,4 +45,19 @@ def load_catalog():
                 raise ValueError("Unrecognized Harper catalog format")
 
     walk(json.loads(path.read_text()))
+    for rule in result:
+        rule["new"] = rule["name"] in new_rules
     return sorted(result, key=lambda r: (r["category"], r["label"]))
+
+
+def filter_rules(catalog, overrides, *, query="", category="", enabled=None, subset="All rules"):
+    query = query.casefold().strip()
+    return [
+        rule
+        for rule in catalog
+        if (not category or rule["category"] == category)
+        and (enabled is None or overrides.get(rule["name"], rule["default"]) == enabled)
+        and (subset != "Overrides" or rule["name"] in overrides)
+        and (subset != "New in bundled Harper" or rule["new"])
+        and query in f"{rule['name']} {rule['label']} {rule['category']}".casefold()
+    ]
