@@ -15,7 +15,7 @@ from com.sun.star.util import XModifyListener
 from . import __version__, accessibility, layout
 from .bundled import WEIR_BINARY, engine_directory, engine_metadata
 from .catalog import filter_rules, load_catalog
-from .checker import Checker, replacement_is_current
+from .checker import SUGGESTIONS_OFF, Checker, replacement_is_current
 from .engine import Engine
 from .ignores import ignore_key, update_ignores
 from .rule_help import explanation
@@ -78,6 +78,14 @@ class Runtime:
         for window in tuple(self.windows):
             if isinstance(window, Review) and not window.closed:
                 window.check()
+
+    def toggle_suggestions(self):
+        data = self.store.update(
+            lambda data: data.update(suggestions_enabled=not data.get("suggestions_enabled", True))
+        )
+        self.context_menus.commands.clear()
+        self.changed()
+        return data["suggestions_enabled"]
 
     def record(self, action, issue):
         try:
@@ -654,6 +662,14 @@ class Review(Window):
     def check(self):
         if self.closed:
             return
+        if not self.app.store.suggestions_enabled():
+            if self.timer:
+                self.timer.cancel()
+            self.generation += 1
+            self.rows = []
+            self.display()
+            self.status(SUGGESTIONS_OFF)
+            return
         if self.pending:
             self.generation += 1
             self.status("Checking; a fresh check will follow your latest edit.")
@@ -1168,6 +1184,7 @@ class RuleBrowser(Window):
 class ProtocolHandler(unohelper.Base, XDispatchProvider, XDispatch, XInitialization, XServiceInfo):
     def __init__(self, ctx):
         self.app, self.frame = runtime(ctx), None
+        self.suggestion_listeners = []
 
     def getImplementationName(self):
         return PROTOCOL
@@ -1189,13 +1206,28 @@ class ProtocolHandler(unohelper.Base, XDispatchProvider, XDispatch, XInitializat
         return tuple(self.queryDispatch(r.FeatureURL, r.FrameName, r.SearchFlags) for r in requests)
 
     def addStatusListener(self, listener, url):
-        pass
+        if url.Path == "toggle-suggestions":
+            if listener not in self.suggestion_listeners:
+                self.suggestion_listeners.append(listener)
+            self.suggestion_status(listener, url, self.app.store.suggestions_enabled())
 
     def removeStatusListener(self, listener, url):
-        pass
+        if url.Path == "toggle-suggestions" and listener in self.suggestion_listeners:
+            self.suggestion_listeners.remove(listener)
+
+    def suggestion_status(self, listener, url, enabled):
+        event = uno.createUnoStruct("com.sun.star.frame.FeatureStateEvent")
+        event.Source, event.FeatureURL = self, url
+        event.IsEnabled, event.State = True, enabled
+        listener.statusChanged(event)
 
     def dispatch(self, url, args):
         try:
+            if url.Path == "toggle-suggestions":
+                enabled = self.app.toggle_suggestions()
+                for listener in tuple(self.suggestion_listeners):
+                    self.suggestion_status(listener, url, enabled)
+                return
             if url.Path.startswith("context/"):
                 self.app.context_menus.execute(url.Path, self.frame)
                 return

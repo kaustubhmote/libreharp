@@ -1,0 +1,29 @@
+{
+  "version": "3.2.0",
+  "source": "https://github.com/Automattic/harper/releases/tag/v3.2.0",
+  "asset": "harper-ls-x86_64-unknown-linux-gnu.tar.gz",
+  "archive_sha256": "f854bdda5627a85915b2c6549ad83250db8535362e73d3ed02393e5df0217d33",
+  "binary_sha256": "988d8211b5ffbefa10193111ca5a882c3834508bd019491f531e709288725daa",
+  "license": "Apache-2.0",
+  "license_sha256": "fbc8f1bffe04ab962340fabb1324d57d8b875070f67759d606516144ee53ac19",
+  "catalog_sha256": "74068eafea806dfe1ee2c7abfb19f96b24c5a8649ca4a4a6995b2b8af5e2e25d",
+  "published_at": "2026-11-13T16:32:27Z",
+  "new_rules": [
+    "BesidesFor",
+    "ByHand",
+    "ComeAcross",
+    "DoubleDown",
+    "ExpandIme",
+    "LittleToNo",
+    "MakeTheMostOf",
+    "ScaredOf",
+    "SpareNoExpense",
+    "UnderThreat"
+  ],
+  "weir_core_commit": "ea9ab1b8f95be99a5d4040c53be92a6c2ad7f7f3",
+  "advanced_options": [
+    "diagnosticSeverity",
+    "isolateEnglish",
+    "maxFileLength"
+  ]
+}

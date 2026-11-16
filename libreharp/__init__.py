@@ -1,3 +1,3 @@
 """LibreHarp: local proofreading for Writer."""
 
-__version__ = "0.9"
+__version__ = "0.9.1"

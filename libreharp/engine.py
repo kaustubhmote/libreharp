@@ -214,8 +214,8 @@ class Engine:
                     begin = offset(text, diag["range"]["start"])
                     end = offset(text, diag["range"]["end"])
                     action_range = diag["range"]
-                    if self.version.split()[-1] in {"3.0.0", "3.1.0"}:
-                        # Harper 3.0.0 and 3.1.0 emit UTF-16 diagnostics but read
+                    if self.version.split()[-1] in {"3.0.0", "3.1.0", "3.2.0"}:
+                        # Harper 3.0.0 through 3.2.0 emit UTF-16 diagnostics but read
                         # code-action positions as scalar indices. Adapt requests only;
                         # returned edits must still exactly match the UTF-16 diagnostic.
                         lines = text.splitlines(keepends=True)

@@ -97,16 +97,17 @@ def main():
         )
         names = (
             "Findings",
-            "Finding explanation and context",
             "Suggested replacement",
             "More actions",
             "Status",
         )
-        test.REPORT["sidebar_controls"] = [n for n in nodes if n["name"] in names]
+        previews = [n for n in nodes if n["name"].startswith("Finding 1 of ") and "[flagged: a]" in n["name"]]
+        test.REPORT["sidebar_controls"] = [n for n in nodes if n["name"] in names] + previews
         for name in names:
             test.record(
                 "Installed sidebar exposes " + name + " through AT-SPI", any(n["name"] == name for n in nodes)
             )
+        test.record("Installed sidebar exposes the flagged text through AT-SPI", bool(previews))
         test.record(
             "Installed Open sidebar focuses Findings",
             any(n["name"] == "Findings" and n["focus_within"] for n in nodes),

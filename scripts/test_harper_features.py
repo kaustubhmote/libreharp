@@ -48,7 +48,11 @@ def main():
     browser.show()
     choose(browser, "subset", "New in bundled Harper")
     browser.refresh()
-    test.record("Rule browser shows only new Harper rules", len(browser.visible_rules) == 25)
+    expected = {rule["name"] for rule in browser.catalog if rule["new"]}
+    test.record(
+        "Rule browser shows only new Harper rules",
+        bool(expected) and {rule["name"] for rule in browser.visible_rules} == expected,
+    )
     category = next(rule["category"] for rule in browser.visible_rules if rule["default"])
     choose(browser, "category", category)
     choose(browser, "enabled", "Enabled")

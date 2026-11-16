@@ -2,6 +2,12 @@
 
 See the [testing guide](docs/TESTING.md) for verification steps and coverage.
 
+## 0.9.1
+
+- Added a checkable **LibreHarp → Enable suggestions** menu item. It turns off LibreHarp's underlines, context-menu actions, and review suggestions across Writer and remembers your choice after restart.
+- Updated the bundled engine and Weir helper to Harper 3.2.0. The rule browser includes 10 new rules and a Word Confusions category.
+- Kept replacement suggestions available for findings after emoji with Harper 3.2.0.
+
 ## 0.9
 
 - Switched LibreHarp's original code and artwork to the Zero-Clause BSD license (0BSD). Bundled components retain their own licenses and notices.

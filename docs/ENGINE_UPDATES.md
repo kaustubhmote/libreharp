@@ -9,10 +9,10 @@ Use `--harper-version` to build an alternate OXT while keeping the default selec
 ```sh
 uv run python scripts/vendor_engine.py --version 3.0.0
 uv run python scripts/build.py --harper-version 3.0.0
-uv run python scripts/check_package.py build/LibreHarp_v0.9_harper-3.0.0.oxt
+uv run python scripts/check_package.py build/LibreHarp_v0.9.1_harper-3.0.0.oxt
 ```
 
-Use `uv run python scripts/vendor_engine.py --select VERSION` to verify and change the default in `vendor/harper/selected.json`. Rebuild the OXT and install it to use the new selection in Writer. The Harper 3.1.0 build includes a Weir helper compiled against the matching pinned Harper commit and ships its dependency notices.
+Use `uv run python scripts/vendor_engine.py --select VERSION` to verify and change the default in `vendor/harper/selected.json`. Rebuild the OXT and install it to use the new selection in Writer. Builds that include Weir require a bridge pinned to the same Harper release. Use the LibreHarp 0.9 package or source tag for a Harper 3.1.0 build with Weir.
 
 ## Add a Harper release
 

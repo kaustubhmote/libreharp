@@ -14,6 +14,8 @@ LibreHarp runs on Linux x86-64 and requires LibreOffice with Python 3.11 or late
 
 For underlines and right-click suggestions, choose **LibreHarp → Use LibreHarp for English checking**. This changes the profile's English checkers. **Restore previous English checkers** switches them back.
 
+Use **LibreHarp → Enable suggestions** to turn LibreHarp checking on or off across Writer. The toggle remembers your choice after restart.
+
 [Changelog](CHANGELOG.md) · [Build and test](docs/TESTING.md) · [0BSD license](LICENSE) · [Third-party notices](THIRD_PARTY.md)
 
 Maintained by Kaustubh R. Mote, with AI development assistance from Codex.

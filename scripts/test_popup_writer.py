@@ -272,10 +272,9 @@ def main(keyboard_only=False):
     sidebar.setVisible(False)
 
     def shows_occurrence(number):
-        details = find_accessible(lambda c: c.getAccessibleName() == "Finding explanation and context")
-        marked = sentence.replace(word, f"[{word}]")
+        marked = sentence.replace(word, f" [flagged: {word}] ")
         expected = " ".join(marked if index == number else sentence for index in range(1, 4))
-        return details is not None and expected in details.getText()
+        return find_accessible(lambda c: expected in c.getAccessibleName()) is not None
 
     popup(len(sentence) + 1 + sentence.index(word), mouse=True)
     choose("Open sidebar")
@@ -324,6 +323,46 @@ def main(keyboard_only=False):
 
     test.record("Writer's About menu shows the installed extension version", wait_for(about_shows_version))
     key("Escape")
+
+    toggle_item = next(
+        context
+        for index in range(libreharp_menu.getAccessibleChildCount())
+        if (context := libreharp_menu.getAccessibleChild(index).getAccessibleContext())
+        and context.getAccessibleName() == "Enable suggestions"
+    )
+    toggle_item.doAccessibleAction(0)
+
+    def sidebar_off():
+        status = find_accessible(
+            lambda c: (
+                c.getAccessibleName() == "Status"
+                and hasattr(c, "getText")
+                and c.getText().startswith("LibreHarp suggestions are off.")
+            )
+        )
+        preview = find_accessible(lambda c: "[flagged: Qzxsidebarprobe]" in c.getAccessibleName())
+        return status is not None and preview is None
+
+    test.record(
+        "Suggestions menu clears the open sidebar",
+        wait_for(lambda: not store.suggestions_enabled() and sidebar_off()),
+    )
+    test.record(
+        "Turning suggestions off removes LibreHarp's remembered-word dictionary from checking",
+        not dictionaries.getDictionaryByName("LibreHarp personal words").isActive(),
+    )
+    toggle_item.doAccessibleAction(0)
+    test.record(
+        "Turning suggestions back on refreshes the sidebar and remembered words",
+        wait_for(
+            lambda: (
+                store.suggestions_enabled()
+                and find_accessible(lambda c: "[flagged: Qzxsidebarprobe]" in c.getAccessibleName())
+                is not None
+                and dictionaries.getDictionaryByName("LibreHarp personal words").isActive()
+            )
+        ),
+    )
     test.record(
         "Installed popup actions produce no component exceptions",
         (error_log.read_text() if error_log.exists() else "") == before_errors,

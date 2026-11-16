@@ -14,6 +14,7 @@ from .weir import validate_rules
 
 DEFAULTS = {
     "schema": 1,
+    "suggestions_enabled": True,
     "profile": "General",
     "profiles": {
         "General": {"rules": {}, "dialect": "auto", "sentence_limit": 0},
@@ -53,6 +54,8 @@ class Store:
     def validate(data):
         if not isinstance(data, dict) or data.get("schema") != 1:
             raise ValueError("Unsupported preference format; no settings were changed.")
+        if type(data.get("suggestions_enabled", True)) is not bool:
+            raise ValueError("The suggestions setting must be true or false.")
         advanced_options(data.get("advanced", {}))
         validate_rules(data.get("weir", {}))
         if not isinstance(data.get("profiles"), dict) or data.get("profile") not in data["profiles"]:
@@ -177,6 +180,9 @@ class Store:
         if result["sentence_limit"]:
             result["rules"]["LongSentences"] = False
         return result
+
+    def suggestions_enabled(self):
+        return self.read().get("suggestions_enabled", True)
 
     def advanced(self):
         return advanced_options(self.read().get("advanced", {}))

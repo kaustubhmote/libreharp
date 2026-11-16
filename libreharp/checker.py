@@ -12,6 +12,7 @@ from .vocabulary import is_word_finding
 from .weir import RULE_PREFIX, WeirError
 
 DIALECTS = {"US": "American", "GB": "British", "AU": "Australian", "CA": "Canadian", "IN": "Indian"}
+SUGGESTIONS_OFF = "LibreHarp suggestions are off. Turn them on in the LibreHarp menu."
 
 
 class Checker:
@@ -25,6 +26,8 @@ class Checker:
 
     def cached(self, text, country="US", overrides=None):
         """Read completed results without waiting for the engine on the UI thread."""
+        if not self.store.suggestions_enabled():
+            return []
         prefs = self.store.effective(overrides)
         options = self.store.advanced()
         if self.skip_reason(text, overrides, options):
@@ -40,6 +43,9 @@ class Checker:
 
     def check(self, text, country="US", overrides=None, *, warnings=None):
         with self.lock:
+            if not self.store.suggestions_enabled():
+                self.status = SUGGESTIONS_OFF
+                return []
             options = self.store.advanced()
             reason = self.skip_reason(text, overrides, options)
             if reason:
@@ -136,6 +142,9 @@ class Checker:
                 self.cache[key] = (copy.deepcopy(issues), weir_error)
                 while len(self.cache) > 256:
                     self.cache.popitem(last=False)
+                if not self.store.suggestions_enabled():
+                    self.status = SUGGESTIONS_OFF
+                    return []
                 issues = without_ignored(text, issues, overrides)
                 self.status = f"{len(issues)} suggestions"
                 if weir_error:

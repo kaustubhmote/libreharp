@@ -10,9 +10,10 @@ from libreharp.store import Store
 from libreharp.weir import EXAMPLE, RULE_PREFIX, WeirEngine, WeirError
 
 
-def test_catalog_marks_exact_release_additions():
-    old = {rule["name"] for rule in load_catalog(VENDOR / "releases" / "3.0.0")}
-    catalog = load_catalog(VENDOR / "releases" / "3.1.0")
+@pytest.mark.parametrize("previous, current", [("3.0.0", "3.1.0"), ("3.1.0", "3.2.0")])
+def test_catalog_marks_exact_release_additions(previous, current):
+    old = {rule["name"] for rule in load_catalog(VENDOR / "releases" / previous)}
+    catalog = load_catalog(VENDOR / "releases" / current)
     new = filter_rules(catalog, {}, subset="New in bundled Harper")
     assert {rule["name"] for rule in new} == {rule["name"] for rule in catalog} - old
     rule = new[0]

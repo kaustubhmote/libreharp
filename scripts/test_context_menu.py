@@ -100,6 +100,13 @@ def main():
         return [getattr(container.getByIndex(i), "Text", "") for i in range(container.Count)]
 
     select(spelling)
+    app.store.update(lambda data: data.update(suggestions_enabled=False))
+    disabled_menu, disabled_result = menu()
+    test.record(
+        "Disabled LibreHarp leaves Writer's context menu intact",
+        disabled_result.value == "IGNORED" and labels(disabled_menu) == ["Original"],
+    )
+    app.store.update(lambda data: data.update(suggestions_enabled=True))
     snap = selected_paragraph(controller)
     test.record(
         "Popup targets the selected occurrence after a non-BMP character",

@@ -99,7 +99,8 @@ class ContextMenus:
         """Mirror personal words in an in-memory Writer dictionary, rebuilt on startup."""
         from .uno_app import service
 
-        words = set(self.app.store.read()["words"])
+        data = self.app.store.read()
+        words = set(data["words"]) if data.get("suggestions_enabled", True) else set()
         if words == self.words:
             return
         dictionaries = service(self.app.ctx, "linguistic2.DictionaryList")
@@ -117,7 +118,7 @@ class ContextMenus:
         dictionary.clear()
         for word in sorted(words):
             dictionary.add(word, False, "")
-        dictionary.setActive(True)
+        dictionary.setActive(bool(words))
         self.words = words
 
     def attach(self, controller):
@@ -191,6 +192,8 @@ class Interceptor(unohelper.Base, XContextMenuInterceptor, XEventListener):
         from .uno_app import language_runs
 
         self.owner.commands = {k: v for k, v in self.owner.commands.items() if v[0] is not self}
+        if not self.app.store.suggestions_enabled():
+            return action("IGNORED")
         snapshot = selected_paragraph(self.controller)
         if snapshot is None:
             return action("IGNORED")

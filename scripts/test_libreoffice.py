@@ -384,8 +384,38 @@ def main():
         "Installed menu dispatch has no component exceptions",
         (errors.read_text() if errors.exists() else "") == previous_errors,
     )
+    menus = configuration(ctx, "/org.openoffice.Office.Addons/AddonUI/OfficeMenuBar")
+    toggle = menus.getByName("org.libreharp.Menu").getByName("Submenu").getByName("toggle-suggestions")
+    url.Complete, url.Path = toggle.getByName("URL"), "toggle-suggestions"
+    frame.queryDispatch(url, "_self", 0).dispatch(url, ())
+    original = "This is a example."
+    record(
+        "Suggestions toggle suppresses installed proofreading",
+        not store.suggestions_enabled()
+        and not checker.doProofreading(identity, original, locale, 0, len(original), ()).aErrors,
+    )
     # Close test dialogs/windows via the isolated desktop shutdown.
     app.engine.close()
+    doc.close(True)
+    stop()
+    ctx = start()
+    doc, identity = bound_document(ctx, locale, original)
+    checker = ctx.ServiceManager.createInstanceWithContext(PROOFREADER, ctx)
+    record(
+        "Suggestions stay off after Writer restarts",
+        not store.suggestions_enabled()
+        and not checker.doProofreading(identity, original, locale, 0, len(original), ()).aErrors,
+    )
+    frame = doc.CurrentController.Frame
+    frame.queryDispatch(url, "_self", 0).dispatch(url, ())
+    record(
+        "Turning suggestions back on restores installed proofreading",
+        store.suggestions_enabled()
+        and any(
+            error.aRuleIdentifier == "AnA"
+            for error in checker.doProofreading(identity, original, locale, 0, len(original), ()).aErrors
+        ),
+    )
     doc.close(True)
 
 

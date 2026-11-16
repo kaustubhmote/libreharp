@@ -2233,8 +2233,8 @@ dependencies = [
 
 [[package]]
 name = "harper-brill"
-version = "3.1.0"
-source = "git+https://github.com/Automattic/harper.git?rev=d52aeac0a6de1cdb030b231705ab7e7e4e12e197#d52aeac0a6de1cdb030b231705ab7e7e4e12e197"
+version = "3.2.0"
+source = "git+https://github.com/Automattic/harper.git?rev=ea9ab1b8f95be99a5d4040c53be92a6c2ad7f7f3#ea9ab1b8f95be99a5d4040c53be92a6c2ad7f7f3"
 dependencies = [
  "harper-pos-utils",
  "serde_json",
@@ -2242,8 +2242,8 @@ dependencies = [
 
 [[package]]
 name = "harper-core"
-version = "3.1.0"
-source = "git+https://github.com/Automattic/harper.git?rev=d52aeac0a6de1cdb030b231705ab7e7e4e12e197#d52aeac0a6de1cdb030b231705ab7e7e4e12e197"
+version = "3.2.0"
+source = "git+https://github.com/Automattic/harper.git?rev=ea9ab1b8f95be99a5d4040c53be92a6c2ad7f7f3#ea9ab1b8f95be99a5d4040c53be92a6c2ad7f7f3"
 dependencies = [
  "ammonia",
  "bitflags",
@@ -2278,8 +2278,8 @@ dependencies = [
 
 [[package]]
 name = "harper-pos-utils"
-version = "3.1.0"
-source = "git+https://github.com/Automattic/harper.git?rev=d52aeac0a6de1cdb030b231705ab7e7e4e12e197#d52aeac0a6de1cdb030b231705ab7e7e4e12e197"
+version = "3.2.0"
+source = "git+https://github.com/Automattic/harper.git?rev=ea9ab1b8f95be99a5d4040c53be92a6c2ad7f7f3#ea9ab1b8f95be99a5d4040c53be92a6c2ad7f7f3"
 dependencies = [
  "burn",
  "burn-ndarray",
