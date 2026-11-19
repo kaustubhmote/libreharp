@@ -9,7 +9,7 @@ from libreharp.bundled import VENDOR, engine_directory, select_engine, verify_en
 from libreharp.engine import Engine
 
 
-@pytest.mark.parametrize("version", ["3.0.0", "3.1.0", "3.2.0"])
+@pytest.mark.parametrize("version", ["3.0.0", "3.1.0", "3.2.0", "3.3.0"])
 def test_retained_engine_replacements(version):
     directory = engine_directory(version)
     assert verify_engine(directory)["version"] == version
@@ -25,9 +25,9 @@ def test_retained_engine_replacements(version):
 
 
 def test_selection_and_rollback_keep_matching_catalog(tmp_path):
-    for version in ("3.0.0", "3.1.0", "3.2.0"):
+    for version in ("3.0.0", "3.1.0", "3.2.0", "3.3.0"):
         shutil.copytree(VENDOR / "releases" / version, tmp_path / "releases" / version)
-    for version in ("3.2.0", "3.1.0", "3.0.0", "3.2.0"):
+    for version in ("3.3.0", "3.2.0", "3.1.0", "3.0.0", "3.3.0"):
         select_engine(version, tmp_path)
         directory = engine_directory(vendor=tmp_path)
         assert directory.name == version

@@ -1,6 +1,6 @@
 [project]
 name = "libreharp"
-version = "0.9.1"
+version = "0.9.2"
 description = "Private, customizable Harper proofreading for LibreOffice Writer"
 license = "0BSD"
 requires-python = ">=3.11"

@@ -6,7 +6,7 @@ license = "0BSD"
 publish = false
 
 [dependencies]
-harper-core = { git = "https://github.com/Automattic/harper.git", rev = "ea9ab1b8f95be99a5d4040c53be92a6c2ad7f7f3", default-features = false, features = ["concurrent"] }
+harper-core = { git = "https://github.com/Automattic/harper.git", rev = "8ad653e68d1dd4a809b3d1124249cad8573a4731", default-features = false, features = ["concurrent"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

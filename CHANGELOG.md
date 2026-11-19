@@ -2,6 +2,11 @@
 
 See the [testing guide](docs/TESTING.md) for verification steps and coverage.
 
+## 0.9.2
+
+- Updated the bundled engine and Weir helper to Harper 3.3.0. Harper ranks spelling suggestions using more of the surrounding context, and the rule browser lists 13 new rules.
+- Kept replacement suggestions available for findings after emoji with Harper 3.3.0.
+
 ## 0.9.1
 
 - Added a checkable **LibreHarp → Enable suggestions** menu item. It turns off LibreHarp's underlines, context-menu actions, and review suggestions across Writer and remembers your choice after restart.

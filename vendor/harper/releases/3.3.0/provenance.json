@@ -1,0 +1,32 @@
+{
+  "version": "3.3.0",
+  "source": "https://github.com/Automattic/harper/releases/tag/v3.3.0",
+  "asset": "harper-ls-x86_64-unknown-linux-gnu.tar.gz",
+  "archive_sha256": "db9980a3387b48b4c99cac6402fdbcaff121a1724410ebbe554500df7fa7af88",
+  "binary_sha256": "c62ae24296005b835875f7e53238e05969feab68647f1c590d28c5de7fd8ff26",
+  "license": "Apache-2.0",
+  "license_sha256": "fbc8f1bffe04ab962340fabb1324d57d8b875070f67759d606516144ee53ac19",
+  "catalog_sha256": "3fda4fccdfaba5bc3279446a60b24c1302ac5ba97f6ed542ced195384b4d87b1",
+  "published_at": "2026-11-18T23:27:37Z",
+  "new_rules": [
+    "AkinTo",
+    "DespiteSubject",
+    "ExplainMe",
+    "HereAreACollection",
+    "MissingIndefiniteArticle",
+    "NounVerbSpelling",
+    "PluralSubjectSeems",
+    "QuotedAsSaying",
+    "StriveFor",
+    "TheSame",
+    "Themselves",
+    "Whenever",
+    "YourPredicativeAdverb"
+  ],
+  "weir_core_commit": "8ad653e68d1dd4a809b3d1124249cad8573a4731",
+  "advanced_options": [
+    "diagnosticSeverity",
+    "isolateEnglish",
+    "maxFileLength"
+  ]
+}
