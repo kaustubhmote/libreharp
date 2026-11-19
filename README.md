@@ -8,7 +8,7 @@ Offline English spelling and grammar checking for LibreOffice Writer, powered by
 
 LibreHarp runs on Linux x86-64 and requires LibreOffice with Python 3.11 or later.
 
-1. [Download LibreHarp v0.9](https://github.com/kaustubhmote/libreharp/releases/download/v0.9/LibreHarp_v0.9.oxt).
+1. Download the `.oxt` from the [latest LibreHarp release](https://github.com/kaustubhmote/libreharp/releases/latest).
 2. Add the OXT in LibreOffice's **Extension Manager** and restart LibreOffice.
 3. Choose **LibreHarp → Open sidebar**.
 
